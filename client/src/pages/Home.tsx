@@ -1,25 +1,440 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Plus, 
+  Trash2, 
+  TrendingUp, 
+  Wallet, 
+  ShoppingBag, 
+  Home as HomeIcon, 
+  Zap, 
+  Coffee, 
+  Gamepad2,
+  ArrowRightLeft
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Best Practices, Design Guide and Common Pitfalls
- */
+// --- Types ---
+type Partner = "A" | "B";
+type SplitType = "50/50" | "60/40" | "custom";
+type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Other";
+
+interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  paidBy: Partner;
+  splitType: SplitType;
+  customSplitA?: number; // Percentage for Partner A
+  category: Category;
+  date: string;
+}
+
+// --- Constants ---
+const CATEGORIES: { value: Category; label: string; icon: any; color: string }[] = [
+  { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600" },
+  { value: "Rent", label: "Rent", icon: HomeIcon, color: "bg-blue-100 text-blue-600" },
+  { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600" },
+  { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600" },
+  { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600" },
+];
+
+// --- Helper Components ---
+
+const CategoryIcon = ({ category }: { category: Category }) => {
+  const cat = CATEGORIES.find((c) => c.value === category) || CATEGORIES[4];
+  const Icon = cat.icon;
+  return (
+    <div className={cn("p-2 rounded-xl", cat.color)}>
+      <Icon size={18} />
+    </div>
+  );
+};
+
 export default function Home() {
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  // --- State ---
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const saved = localStorage.getItem("expenses");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [paidBy, setPaidBy] = useState<Partner>("A");
+  const [splitType, setSplitType] = useState<SplitType>("50/50");
+  const [category, setCategory] = useState<Category>("Groceries");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // --- Effects ---
+  useEffect(() => {
+    localStorage.setItem("expenses", JSON.stringify(expenses));
+  }, [expenses]);
+
+  // --- Logic ---
+  const addExpense = () => {
+    if (!description || !amount) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const newExpense: Expense = {
+      id: crypto.randomUUID(),
+      description,
+      amount: parseFloat(amount),
+      paidBy,
+      splitType,
+      category,
+      date: new Date().toISOString(),
+    };
+
+    setExpenses([newExpense, ...expenses]);
+    setDescription("");
+    setAmount("");
+    setIsFormOpen(false);
+    toast.success("Expense added successfully");
+  };
+
+  const deleteExpense = (id: string) => {
+    setExpenses(expenses.filter((e) => e.id !== id));
+    toast.success("Expense deleted");
+  };
+
+  const calculateSettlement = () => {
+    let balance = 0; // Positive means A is owed, Negative means B is owed
+
+    expenses.forEach((expense) => {
+      const amount = expense.amount;
+      let shareA = 0;
+
+      if (expense.splitType === "50/50") shareA = amount * 0.5;
+      else if (expense.splitType === "60/40") shareA = amount * 0.6;
+      // Add custom logic here if needed
+
+      const shareB = amount - shareA;
+
+      if (expense.paidBy === "A") {
+        balance += shareB; // B owes A their share
+      } else {
+        balance -= shareA; // A owes B their share
+      }
+    });
+
+    return balance;
+  };
+
+  const balance = calculateSettlement();
+  const settlementText =
+    balance === 0
+      ? "All settled up!"
+      : balance > 0
+      ? `Partner B owes Partner A`
+      : `Partner A owes Partner B`;
+  
+  const settlementAmount = Math.abs(balance).toFixed(2);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
+    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0">
+      
+      {/* --- Header / Hero --- */}
+      <header className="relative overflow-hidden bg-white border-b border-slate-100 pt-12 pb-16 px-6 md:px-12">
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-pink-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
+        
+        <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-2">
+              Shared<span className="text-indigo-600">Wallet</span>
+            </h1>
+            <p className="text-slate-500 text-lg">Simplify your couple finances.</p>
+          </div>
+          
+          {/* Settlement Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 w-full md:w-auto min-w-[300px]"
+          >
+            <div className="flex items-center gap-3 mb-2 text-slate-500 text-sm font-medium uppercase tracking-wider">
+              <ArrowRightLeft size={16} />
+              Settlement Status
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl md:text-5xl font-heading font-light text-slate-900">
+                ${settlementAmount}
+              </span>
+            </div>
+            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium">
+              {settlementText}
+            </div>
+          </motion.div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 md:px-6 -mt-8 relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          
+          {/* --- Left Column: Expense List --- */}
+          <div className="md:col-span-7 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-heading font-semibold text-slate-800">Recent Transactions</h2>
+              <span className="text-sm text-slate-400">{expenses.length} entries</span>
+            </div>
+
+            {expenses.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm"
+              >
+                <div className="w-48 h-48 mx-auto mb-6 relative">
+                   <img src="/images/empty-state.png" alt="No expenses" className="w-full h-full object-contain opacity-90" />
+                </div>
+                <h3 className="text-xl font-medium text-slate-900 mb-2">No expenses yet</h3>
+                <p className="text-slate-500">Add your first shared expense to get started.</p>
+              </motion.div>
+            ) : (
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {expenses.map((expense) => (
+                    <motion.div
+                      key={expense.id}
+                      layout
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="group bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <CategoryIcon category={expense.category} />
+                        <div>
+                          <h4 className="font-medium text-slate-900">{expense.description}</h4>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                            <span>{new Date(expense.date).toLocaleDateString()}</span>
+                            <span>•</span>
+                            <span className={expense.paidBy === 'A' ? "text-indigo-600 font-medium" : "text-pink-600 font-medium"}>
+                              Paid by {expense.paidBy}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <span className="font-heading font-semibold text-lg text-slate-900">
+                          ${expense.amount.toFixed(2)}
+                        </span>
+                        <button 
+                          onClick={() => deleteExpense(expense.id)}
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
+
+          {/* --- Right Column: Add Expense Form (Desktop Sticky) --- */}
+          <div className="hidden md:block md:col-span-5">
+            <div className="sticky top-8">
+              <Card className="border-0 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] rounded-3xl overflow-hidden">
+                <div className="h-2 bg-gradient-to-r from-indigo-500 to-pink-500" />
+                <CardHeader>
+                  <CardTitle className="font-heading text-2xl">Add New Expense</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Input 
+                      placeholder="e.g. Weekly Groceries" 
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Amount</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          className="h-12 pl-8 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-heading text-lg"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Category</Label>
+                      <Select value={category} onValueChange={(v: Category) => setCategory(v)}>
+                        <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              <div className="flex items-center gap-2">
+                                <cat.icon size={16} className="text-slate-500" />
+                                {cat.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <Label>Who Paid?</Label>
+                    <Tabs value={paidBy} onValueChange={(v) => setPaidBy(v as Partner)} className="w-full">
+                      <TabsList className="w-full h-12 p-1 bg-slate-100 rounded-full">
+                        <TabsTrigger value="A" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all">Partner A</TabsTrigger>
+                        <TabsTrigger value="B" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-pink-600 data-[state=active]:shadow-sm transition-all">Partner B</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <Label>Split Method</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {["50/50", "60/40", "custom"].map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setSplitType(type as SplitType)}
+                          className={cn(
+                            "h-10 rounded-lg text-sm font-medium transition-all border",
+                            splitType === type 
+                              ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          )}
+                        >
+                          {type === "custom" ? "Custom" : type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={addExpense}
+                    className="w-full h-14 text-lg rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 mt-4"
+                  >
+                    Add Expense
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
       </main>
+
+      {/* --- Mobile Floating Action Button --- */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <Button 
+          onClick={() => setIsFormOpen(true)}
+          className="h-16 w-16 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center"
+        >
+          <Plus size={32} />
+        </Button>
+      </div>
+
+      {/* --- Mobile Form Modal (Simplified) --- */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFormOpen(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full bg-white rounded-t-3xl sm:rounded-3xl p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
+              <h2 className="text-2xl font-heading font-bold mb-6">New Expense</h2>
+              
+              {/* Reusing form logic for mobile - in a real app, extract this to a component */}
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Input 
+                    placeholder="What was it?" 
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="h-12 rounded-xl bg-slate-50"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Amount</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="0.00" 
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className="h-12 rounded-xl bg-slate-50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={category} onValueChange={(v: Category) => setCategory(v)}>
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <Label>Who Paid?</Label>
+                  <Tabs value={paidBy} onValueChange={(v) => setPaidBy(v as Partner)} className="w-full">
+                    <TabsList className="w-full h-12 bg-slate-100 rounded-full">
+                      <TabsTrigger value="A" className="w-1/2 h-full rounded-full">Partner A</TabsTrigger>
+                      <TabsTrigger value="B" className="w-1/2 h-full rounded-full">Partner B</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
+                <Button 
+                  onClick={addExpense}
+                  className="w-full h-14 text-lg rounded-2xl bg-indigo-600 text-white mt-4"
+                >
+                  Save Expense
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
