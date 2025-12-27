@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { 
   Plus, 
   Trash2, 
@@ -27,7 +28,8 @@ import {
   User,
   X,
   Upload,
-  BarChart3
+  BarChart3,
+  PieChart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -60,6 +62,8 @@ interface Profiles {
   A: UserProfile;
   B: UserProfile;
 }
+
+type Budgets = Record<Category, number>;
 
 // --- Constants ---
 const CATEGORIES: { value: Category; label: string; icon: any; color: string; hex: string }[] = [
@@ -118,6 +122,17 @@ export default function Home() {
     };
   });
 
+  const [budgets, setBudgets] = useState<Budgets>(() => {
+    const saved = localStorage.getItem("budgets");
+    return saved ? JSON.parse(saved) : {
+      Groceries: 0,
+      Rent: 0,
+      Utilities: 0,
+      Fun: 0,
+      Other: 0
+    };
+  });
+
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState<Partner>("A");
@@ -125,6 +140,7 @@ export default function Home() {
   const [category, setCategory] = useState<Category>("Groceries");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -137,6 +153,10 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("profiles", JSON.stringify(profiles));
   }, [profiles]);
+
+  useEffect(() => {
+    localStorage.setItem("budgets", JSON.stringify(budgets));
+  }, [budgets]);
 
   // --- Logic ---
   const addExpense = () => {
@@ -171,6 +191,14 @@ export default function Home() {
     setProfiles(prev => ({
       ...prev,
       [partner]: { ...prev[partner], [field]: value }
+    }));
+  };
+
+  const updateBudget = (category: Category, value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setBudgets(prev => ({
+      ...prev,
+      [category]: numValue
     }));
   };
 
@@ -243,6 +271,33 @@ export default function Home() {
     return data.filter(d => d.amount > 0);
   }, [expenses]);
 
+  // Calculate budget progress
+  const budgetProgress = useMemo(() => {
+    const progress: Record<Category, { spent: number; limit: number; percentage: number }> = {
+      Groceries: { spent: 0, limit: 0, percentage: 0 },
+      Rent: { spent: 0, limit: 0, percentage: 0 },
+      Utilities: { spent: 0, limit: 0, percentage: 0 },
+      Fun: { spent: 0, limit: 0, percentage: 0 },
+      Other: { spent: 0, limit: 0, percentage: 0 },
+    };
+
+    expenses.forEach(expense => {
+      if (progress[expense.category]) {
+        progress[expense.category].spent += expense.amount;
+      }
+    });
+
+    Object.keys(progress).forEach((key) => {
+      const cat = key as Category;
+      progress[cat].limit = budgets[cat];
+      if (budgets[cat] > 0) {
+        progress[cat].percentage = Math.min((progress[cat].spent / budgets[cat]) * 100, 100);
+      }
+    });
+
+    return progress;
+  }, [expenses, budgets]);
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0">
       
@@ -260,6 +315,16 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Budget Button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              onClick={() => setIsBudgetOpen(true)}
+            >
+              <PieChart className="h-5 w-5 text-slate-600" />
+            </Button>
+
             {/* Settings Button */}
             <Button 
               variant="outline" 
@@ -337,6 +402,50 @@ export default function Home() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Budget Progress Section */}
+            {Object.values(budgets).some(b => b > 0) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-pink-50 rounded-xl text-pink-600">
+                    <PieChart size={20} />
+                  </div>
+                  <h2 className="text-lg font-heading font-semibold text-slate-800">Budget Progress</h2>
+                </div>
+                
+                {CATEGORIES.map(cat => {
+                  const data = budgetProgress[cat.value];
+                  if (data.limit === 0) return null;
+                  
+                  const isOverBudget = data.spent > data.limit;
+                  
+                  return (
+                    <div key={cat.value} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <cat.icon size={14} className="text-slate-400" />
+                          <span className="font-medium text-slate-700">{cat.label}</span>
+                        </div>
+                        <span className={cn("font-medium", isOverBudget ? "text-red-500" : "text-slate-500")}>
+                          ${data.spent.toFixed(0)} / ${data.limit}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={data.percentage} 
+                        className="h-2 bg-slate-100" 
+                        indicatorClassName={cn(
+                          isOverBudget ? "bg-red-500" : cat.color.split(" ")[0].replace("bg-", "bg-")
+                        )}
+                      />
+                    </div>
+                  );
+                })}
               </motion.div>
             )}
 
@@ -713,6 +822,39 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- Budget Modal --- */}
+      <Dialog open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">Monthly Budgets</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <p className="text-sm text-slate-500 mb-2">Set monthly spending limits for each category.</p>
+            {CATEGORIES.map((cat) => (
+              <div key={cat.value} className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor={`budget-${cat.value}`} className="col-span-2 flex items-center gap-2">
+                  <div className={cn("p-1.5 rounded-lg", cat.color)}>
+                    <cat.icon size={14} />
+                  </div>
+                  {cat.label}
+                </Label>
+                <div className="col-span-2 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                  <Input
+                    id={`budget-${cat.value}`}
+                    type="number"
+                    value={budgets[cat.value] || ""}
+                    onChange={(e) => updateBudget(cat.value, e.target.value)}
+                    className="pl-7 h-9 rounded-lg"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
