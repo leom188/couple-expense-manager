@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ import {
   ArrowRightLeft,
   Settings,
   User,
-  X
+  X,
+  Upload
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -108,6 +109,9 @@ export default function Home() {
   const [category, setCategory] = useState<Category>("Groceries");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  const fileInputRefA = useRef<HTMLInputElement>(null);
+  const fileInputRefB = useRef<HTMLInputElement>(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -152,6 +156,24 @@ export default function Home() {
       ...prev,
       [partner]: { ...prev[partner], [field]: value }
     }));
+  };
+
+  const handleFileUpload = (partner: Partner, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      updateProfile(partner, "avatar", base64String);
+      toast.success("Avatar updated successfully");
+    };
+    reader.readAsDataURL(file);
   };
 
   const calculateSettlement = () => {
@@ -544,13 +566,26 @@ export default function Home() {
                       key={avatar}
                       onClick={() => updateProfile("A", "avatar", avatar)}
                       className={cn(
-                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all",
+                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0",
                         profiles.A.avatar === avatar ? "border-indigo-600 scale-110" : "border-transparent hover:border-slate-200"
                       )}
                     >
                       <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                     </button>
                   ))}
+                  <button
+                    onClick={() => fileInputRefA.current?.click()}
+                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-400 flex items-center justify-center bg-slate-50 shrink-0 transition-colors"
+                  >
+                    <Upload size={16} className="text-slate-400" />
+                  </button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRefA} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload("A", e)}
+                  />
                 </div>
               </div>
             </div>
@@ -579,13 +614,26 @@ export default function Home() {
                       key={avatar}
                       onClick={() => updateProfile("B", "avatar", avatar)}
                       className={cn(
-                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all",
+                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0",
                         profiles.B.avatar === avatar ? "border-pink-600 scale-110" : "border-transparent hover:border-slate-200"
                       )}
                     >
                       <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                     </button>
                   ))}
+                  <button
+                    onClick={() => fileInputRefB.current?.click()}
+                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 hover:border-pink-400 flex items-center justify-center bg-slate-50 shrink-0 transition-colors"
+                  >
+                    <Upload size={16} className="text-slate-400" />
+                  </button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRefB} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload("B", e)}
+                  />
                 </div>
               </div>
             </div>
