@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,12 +26,14 @@ import {
   Settings,
   User,
   X,
-  Upload
+  Upload,
+  BarChart3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -60,12 +62,12 @@ interface Profiles {
 }
 
 // --- Constants ---
-const CATEGORIES: { value: Category; label: string; icon: any; color: string }[] = [
-  { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600" },
-  { value: "Rent", label: "Rent", icon: HomeIcon, color: "bg-blue-100 text-blue-600" },
-  { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600" },
-  { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600" },
-  { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600" },
+const CATEGORIES: { value: Category; label: string; icon: any; color: string; hex: string }[] = [
+  { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600", hex: "#10b981" },
+  { value: "Rent", label: "Rent", icon: HomeIcon, color: "bg-blue-100 text-blue-600", hex: "#3b82f6" },
+  { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600", hex: "#eab308" },
+  { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600", hex: "#ec4899" },
+  { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600", hex: "#6b7280" },
 ];
 
 const AVATARS = [
@@ -85,6 +87,20 @@ const CategoryIcon = ({ category }: { category: Category }) => {
       <Icon size={18} />
     </div>
   );
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 border border-slate-100 shadow-lg rounded-xl text-sm">
+        <p className="font-medium text-slate-900 mb-1">{label}</p>
+        <p className="text-indigo-600 font-semibold">
+          ${payload[0].value.toFixed(2)}
+        </p>
+      </div>
+    );
+  }
+  return null;
 };
 
 export default function Home() {
@@ -209,6 +225,24 @@ export default function Home() {
   
   const settlementAmount = Math.abs(balance).toFixed(2);
 
+  // Prepare chart data
+  const chartData = useMemo(() => {
+    const data = CATEGORIES.map(cat => ({
+      name: cat.label,
+      amount: 0,
+      color: cat.hex
+    }));
+
+    expenses.forEach(expense => {
+      const categoryIndex = data.findIndex(d => d.name === expense.category);
+      if (categoryIndex !== -1) {
+        data[categoryIndex].amount += expense.amount;
+      }
+    });
+
+    return data.filter(d => d.amount > 0);
+  }, [expenses]);
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0">
       
@@ -262,8 +296,50 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-4 md:px-6 -mt-8 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           
-          {/* --- Left Column: Expense List --- */}
+          {/* --- Left Column: Expense List & Chart --- */}
           <div className="md:col-span-7 space-y-6">
+            
+            {/* Chart Section */}
+            {chartData.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm"
+              >
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+                    <BarChart3 size={20} />
+                  </div>
+                  <h2 className="text-lg font-heading font-semibold text-slate-800">Spending by Category</h2>
+                </div>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                      />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                      <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={50}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </motion.div>
+            )}
+
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-heading font-semibold text-slate-800">Recent Transactions</h2>
               <span className="text-sm text-slate-400">{expenses.length} entries</span>
