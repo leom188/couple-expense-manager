@@ -22,11 +22,15 @@ import {
   Zap, 
   Coffee, 
   Gamepad2,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Settings,
+  User,
+  X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -44,6 +48,16 @@ interface Expense {
   date: string;
 }
 
+interface UserProfile {
+  name: string;
+  avatar: string;
+}
+
+interface Profiles {
+  A: UserProfile;
+  B: UserProfile;
+}
+
 // --- Constants ---
 const CATEGORIES: { value: Category; label: string; icon: any; color: string }[] = [
   { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600" },
@@ -51,6 +65,13 @@ const CATEGORIES: { value: Category; label: string; icon: any; color: string }[]
   { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600" },
   { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600" },
   { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600" },
+];
+
+const AVATARS = [
+  "/images/avatar-1.png",
+  "/images/avatar-2.png",
+  "/images/avatar-3.png",
+  "/images/avatar-4.png",
 ];
 
 // --- Helper Components ---
@@ -72,17 +93,30 @@ export default function Home() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [profiles, setProfiles] = useState<Profiles>(() => {
+    const saved = localStorage.getItem("profiles");
+    return saved ? JSON.parse(saved) : {
+      A: { name: "Partner A", avatar: AVATARS[0] },
+      B: { name: "Partner B", avatar: AVATARS[1] },
+    };
+  });
+
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState<Partner>("A");
   const [splitType, setSplitType] = useState<SplitType>("50/50");
   const [category, setCategory] = useState<Category>("Groceries");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // --- Effects ---
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem("profiles", JSON.stringify(profiles));
+  }, [profiles]);
 
   // --- Logic ---
   const addExpense = () => {
@@ -113,6 +147,13 @@ export default function Home() {
     toast.success("Expense deleted");
   };
 
+  const updateProfile = (partner: Partner, field: keyof UserProfile, value: string) => {
+    setProfiles(prev => ({
+      ...prev,
+      [partner]: { ...prev[partner], [field]: value }
+    }));
+  };
+
   const calculateSettlement = () => {
     let balance = 0; // Positive means A is owed, Negative means B is owed
 
@@ -141,8 +182,8 @@ export default function Home() {
     balance === 0
       ? "All settled up!"
       : balance > 0
-      ? `Partner B owes Partner A`
-      : `Partner A owes Partner B`;
+      ? `${profiles.B.name} owes ${profiles.A.name}`
+      : `${profiles.A.name} owes ${profiles.B.name}`;
   
   const settlementAmount = Math.abs(balance).toFixed(2);
 
@@ -162,25 +203,37 @@ export default function Home() {
             <p className="text-slate-500 text-lg">Simplify your couple finances.</p>
           </div>
           
-          {/* Settlement Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 w-full md:w-auto min-w-[300px]"
-          >
-            <div className="flex items-center gap-3 mb-2 text-slate-500 text-sm font-medium uppercase tracking-wider">
-              <ArrowRightLeft size={16} />
-              Settlement Status
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl md:text-5xl font-heading font-light text-slate-900">
-                ${settlementAmount}
-              </span>
-            </div>
-            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium">
-              {settlementText}
-            </div>
-          </motion.div>
+          <div className="flex items-center gap-4">
+            {/* Settings Button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-5 w-5 text-slate-600" />
+            </Button>
+
+            {/* Settlement Card */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 w-full md:w-auto min-w-[300px]"
+            >
+              <div className="flex items-center gap-3 mb-2 text-slate-500 text-sm font-medium uppercase tracking-wider">
+                <ArrowRightLeft size={16} />
+                Settlement Status
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl md:text-5xl font-heading font-light text-slate-900">
+                  ${settlementAmount}
+                </span>
+              </div>
+              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium">
+                {settlementText}
+              </div>
+            </motion.div>
+          </div>
         </div>
       </header>
 
@@ -225,9 +278,16 @@ export default function Home() {
                           <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                             <span>{new Date(expense.date).toLocaleDateString()}</span>
                             <span>•</span>
-                            <span className={expense.paidBy === 'A' ? "text-indigo-600 font-medium" : "text-pink-600 font-medium"}>
-                              Paid by {expense.paidBy}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <img 
+                                src={profiles[expense.paidBy].avatar} 
+                                alt={profiles[expense.paidBy].name}
+                                className="w-4 h-4 rounded-full object-cover"
+                              />
+                              <span className={expense.paidBy === 'A' ? "text-indigo-600 font-medium" : "text-pink-600 font-medium"}>
+                                Paid by {profiles[expense.paidBy].name}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -306,9 +366,19 @@ export default function Home() {
                   <div className="space-y-3 pt-2">
                     <Label>Who Paid?</Label>
                     <Tabs value={paidBy} onValueChange={(v) => setPaidBy(v as Partner)} className="w-full">
-                      <TabsList className="w-full h-12 p-1 bg-slate-100 rounded-full">
-                        <TabsTrigger value="A" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all">Partner A</TabsTrigger>
-                        <TabsTrigger value="B" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-pink-600 data-[state=active]:shadow-sm transition-all">Partner B</TabsTrigger>
+                      <TabsList className="w-full h-14 p-1 bg-slate-100 rounded-full">
+                        <TabsTrigger value="A" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all">
+                          <div className="flex items-center gap-2">
+                            <img src={profiles.A.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                            {profiles.A.name}
+                          </div>
+                        </TabsTrigger>
+                        <TabsTrigger value="B" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-pink-600 data-[state=active]:shadow-sm transition-all">
+                          <div className="flex items-center gap-2">
+                            <img src={profiles.B.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                            {profiles.B.name}
+                          </div>
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -356,7 +426,7 @@ export default function Home() {
         </Button>
       </div>
 
-      {/* --- Mobile Form Modal (Simplified) --- */}
+      {/* --- Mobile Form Modal --- */}
       <AnimatePresence>
         {isFormOpen && (
           <div className="md:hidden fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
@@ -377,7 +447,6 @@ export default function Home() {
               <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
               <h2 className="text-2xl font-heading font-bold mb-6">New Expense</h2>
               
-              {/* Reusing form logic for mobile - in a real app, extract this to a component */}
               <div className="space-y-5">
                 <div className="space-y-2">
                   <Label>Description</Label>
@@ -417,9 +486,19 @@ export default function Home() {
                 <div className="space-y-3">
                   <Label>Who Paid?</Label>
                   <Tabs value={paidBy} onValueChange={(v) => setPaidBy(v as Partner)} className="w-full">
-                    <TabsList className="w-full h-12 bg-slate-100 rounded-full">
-                      <TabsTrigger value="A" className="w-1/2 h-full rounded-full">Partner A</TabsTrigger>
-                      <TabsTrigger value="B" className="w-1/2 h-full rounded-full">Partner B</TabsTrigger>
+                    <TabsList className="w-full h-14 bg-slate-100 rounded-full">
+                      <TabsTrigger value="A" className="w-1/2 h-full rounded-full">
+                        <div className="flex items-center gap-2">
+                          <img src={profiles.A.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                          {profiles.A.name}
+                        </div>
+                      </TabsTrigger>
+                      <TabsTrigger value="B" className="w-1/2 h-full rounded-full">
+                        <div className="flex items-center gap-2">
+                          <img src={profiles.B.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                          {profiles.B.name}
+                        </div>
+                      </TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
@@ -435,6 +514,84 @@ export default function Home() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* --- Settings Modal --- */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">Profile Settings</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            {/* Partner A Settings */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-indigo-600 flex items-center gap-2">
+                <User size={18} /> Partner A
+              </h3>
+              <div className="grid gap-2">
+                <Label htmlFor="name-a">Name</Label>
+                <Input
+                  id="name-a"
+                  value={profiles.A.name}
+                  onChange={(e) => updateProfile("A", "name", e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Avatar</Label>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {AVATARS.map((avatar) => (
+                    <button
+                      key={avatar}
+                      onClick={() => updateProfile("A", "avatar", avatar)}
+                      className={cn(
+                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all",
+                        profiles.A.avatar === avatar ? "border-indigo-600 scale-110" : "border-transparent hover:border-slate-200"
+                      )}
+                    >
+                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100" />
+
+            {/* Partner B Settings */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-pink-600 flex items-center gap-2">
+                <User size={18} /> Partner B
+              </h3>
+              <div className="grid gap-2">
+                <Label htmlFor="name-b">Name</Label>
+                <Input
+                  id="name-b"
+                  value={profiles.B.name}
+                  onChange={(e) => updateProfile("B", "name", e.target.value)}
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Avatar</Label>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {AVATARS.map((avatar) => (
+                    <button
+                      key={avatar}
+                      onClick={() => updateProfile("B", "avatar", avatar)}
+                      className={cn(
+                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all",
+                        profiles.B.avatar === avatar ? "border-pink-600 scale-110" : "border-transparent hover:border-slate-200"
+                      )}
+                    >
+                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
