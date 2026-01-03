@@ -38,6 +38,7 @@ import {
   Check,
   Moon,
   Sun,
+  Percent,
   Download,
   Search,
   Menu,
@@ -56,7 +57,7 @@ import { Lock } from "lucide-react";
 
 // --- Types ---
 type Partner = "A" | "B";
-type SplitType = "50/50" | "60/40" | "income" | "custom";
+type SplitType = "50/50" | "income" | "custom";
 type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Other";
 type Frequency = "Monthly" | "Weekly";
 type TabView = "home" | "insights" | "planning" | "menu";
@@ -188,7 +189,9 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState<Partner>("A");
-  const [splitType, setSplitType] = useState<SplitType>("50/50");
+  const [splitType, setSplitType] = useState<SplitType>(() => {
+    return (localStorage.getItem("defaultSplitType") as SplitType) || "50/50";
+  });
   const [category, setCategory] = useState<Category>("Groceries");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -205,7 +208,17 @@ export default function Home() {
   const [recCategory, setRecCategory] = useState<Category>("Rent");
   const [editingRecId, setEditingRecId] = useState<string | null>(null);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [customSplitA, setCustomSplitA] = useState<number>(50); // Percentage for Partner A
+  const [customSplitA, setCustomSplitA] = useState<number>(() => {
+    return parseInt(localStorage.getItem("defaultCustomSplitA") || "50");
+  }); // Percentage for Partner A
+  
+  // Global Split Preferences
+  const [defaultSplitType, setDefaultSplitType] = useState<SplitType>(() => {
+    return (localStorage.getItem("defaultSplitType") as SplitType) || "50/50";
+  });
+  const [defaultCustomSplitA, setDefaultCustomSplitA] = useState<number>(() => {
+    return parseInt(localStorage.getItem("defaultCustomSplitA") || "50");
+  });
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -218,6 +231,14 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("profiles", JSON.stringify(profiles));
   }, [profiles]);
+
+  useEffect(() => {
+    localStorage.setItem("defaultSplitType", defaultSplitType);
+  }, [defaultSplitType]);
+
+  useEffect(() => {
+    localStorage.setItem("defaultCustomSplitA", defaultCustomSplitA.toString());
+  }, [defaultCustomSplitA]);
 
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
@@ -495,8 +516,6 @@ export default function Home() {
 
       if (expense.splitType === "50/50") {
         shareA = amount * 0.5;
-      } else if (expense.splitType === "60/40") {
-        shareA = amount * 0.6;
       } else if (expense.splitType === "income") {
         const totalIncome = profiles.A.income + profiles.B.income;
         const ratioA = totalIncome > 0 ? profiles.A.income / totalIncome : 0.5;
@@ -1173,11 +1192,11 @@ export default function Home() {
 
                   <div className="space-y-3 pt-2">
                     <Label className="dark:text-slate-300">Split Method</Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {["50/50", "60/40", "income", "custom"].map((type) => (
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["50/50", "income", "custom"] as SplitType[]).map((type) => (
                         <button
                           key={type}
-                          onClick={() => setSplitType(type as SplitType)}
+                          onClick={() => setSplitType(type)}
                           className={cn(
                             "h-10 rounded-lg text-xs font-medium transition-all border px-1",
                             splitType === type 
@@ -1185,7 +1204,7 @@ export default function Home() {
                               : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                           )}
                         >
-                          {type === "custom" ? "Custom" : type === "income" ? "Income" : type}
+                          {type === "custom" ? "Custom %" : type === "income" ? "By Income" : "50/50"}
                         </button>
                       ))}
                     </div>
@@ -1563,31 +1582,121 @@ export default function Home() {
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
+            {/* Split Preferences */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Percent size={18} /> Split Preferences
+              </h3>
+              
+              <div className="space-y-3">
+                <Label className="dark:text-slate-300">Default Split Method</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["50/50", "income", "custom"] as SplitType[]).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setDefaultSplitType(type)}
+                      className={cn(
+                        "h-10 rounded-lg text-xs font-medium transition-all border px-1",
+                        defaultSplitType === type 
+                          ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300" 
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
+                      )}
+                    >
+                      {type === "custom" ? "Custom %" : type === "income" ? "By Income" : "50/50"}
+                    </button>
+                  ))}
+                </div>
+
+                {defaultSplitType === "income" && (
+                  <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="income-a" className="text-xs text-indigo-600 dark:text-indigo-400">{profiles.A.name}'s Income</Label>
+                        <Input
+                          id="income-a"
+                          type="number"
+                          value={profiles.A.income}
+                          onChange={(e) => updateProfile("A", "income", parseFloat(e.target.value) || 0)}
+                          className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="income-b" className="text-xs text-pink-600 dark:text-pink-400">{profiles.B.name}'s Income</Label>
+                        <Input
+                          id="income-b"
+                          type="number"
+                          value={profiles.B.income}
+                          onChange={(e) => updateProfile("B", "income", parseFloat(e.target.value) || 0)}
+                          className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 text-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                      Current Ratio: {Math.round((profiles.A.income / (profiles.A.income + profiles.B.income || 1)) * 100)}% / {Math.round((profiles.B.income / (profiles.A.income + profiles.B.income || 1)) * 100)}%
+                    </div>
+                  </div>
+                )}
+
+                {defaultSplitType === "custom" && (
+                  <div className="pt-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-indigo-600 dark:text-indigo-400">{profiles.A.name}</span>
+                        <span className="font-medium text-pink-600 dark:text-pink-400">{profiles.B.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={defaultCustomSplitA}
+                            onChange={(e) => {
+                              const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                              setDefaultCustomSplitA(val);
+                            }}
+                            className="h-10 text-center pr-6"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                        </div>
+                        <div className="text-slate-400 font-medium text-sm">vs</div>
+                        <div className="relative flex-1">
+                          <Input
+                            type="number"
+                            value={100 - defaultCustomSplitA}
+                            disabled
+                            className="h-10 text-center pr-6 bg-slate-100 dark:bg-slate-800 text-slate-500"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                        </div>
+                      </div>
+                      <div className="relative h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div 
+                          className="absolute left-0 top-0 bottom-0 bg-indigo-500 transition-all duration-300"
+                          style={{ width: `${defaultCustomSplitA}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
             {/* Partner A Settings */}
             <div className="space-y-4">
               <h3 className="font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                 <User size={18} /> Partner A
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name-a" className="dark:text-slate-300">Name</Label>
-                  <Input
-                    id="name-a"
-                    value={profiles.A.name}
-                    onChange={(e) => updateProfile("A", "name", e.target.value)}
-                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="income-a" className="dark:text-slate-300">Monthly Income</Label>
-                  <Input
-                    id="income-a"
-                    type="number"
-                    value={profiles.A.income}
-                    onChange={(e) => updateProfile("A", "income", parseFloat(e.target.value) || 0)}
-                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name-a" className="dark:text-slate-300">Name</Label>
+                <Input
+                  id="name-a"
+                  value={profiles.A.name}
+                  onChange={(e) => updateProfile("A", "name", e.target.value)}
+                  className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-300">Avatar</Label>
@@ -1628,16 +1737,15 @@ export default function Home() {
               <h3 className="font-medium text-pink-600 dark:text-pink-400 flex items-center gap-2">
                 <User size={18} /> Partner B
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name-b" className="dark:text-slate-300">Name</Label>
-                  <Input
-                    id="name-b"
-                    value={profiles.B.name}
-                    onChange={(e) => updateProfile("B", "name", e.target.value)}
-                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="name-b" className="dark:text-slate-300">Name</Label>
+                <Input
+                  id="name-b"
+                  value={profiles.B.name}
+                  onChange={(e) => updateProfile("B", "name", e.target.value)}
+                  className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                />
+              </div>
                 <div className="space-y-2">
                   <Label htmlFor="income-b" className="dark:text-slate-300">Monthly Income</Label>
                   <Input
@@ -1679,7 +1787,6 @@ export default function Home() {
                   />
                 </div>
               </div>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
