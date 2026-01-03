@@ -646,30 +646,56 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="space-y-3 pb-20">
-                    {filteredExpenses.map((expense) => (
-                      <div
-                        key={expense.id}
-                        className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-4">
-                          <CategoryIcon category={expense.category} />
-                          <div>
-                            <h4 className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</h4>
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              {new Date(expense.date).toLocaleDateString()} • {profiles[expense.paidBy].name}
-                            </div>
+                    <AnimatePresence>
+                      {filteredExpenses.map((expense) => (
+                        <motion.div
+                          key={expense.id}
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="relative"
+                        >
+                          {/* Swipe Background (Delete Action) */}
+                          <div className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-6">
+                            <Trash2 className="text-white" size={20} />
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-slate-900 dark:text-slate-100">
-                            ${expense.amount.toFixed(2)}
-                          </span>
-                          <button onClick={() => deleteExpense(expense.id)} className="text-slate-300 hover:text-red-500">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+
+                          {/* Swipeable Card */}
+                          <motion.div
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={{ left: 0.5, right: 0.05 }}
+                            dragSnapToOrigin
+                            whileDrag={{ scale: 0.98 }}
+                            onDragEnd={(_, info) => {
+                              // Trigger delete if dragged far enough (more than 60px) or with enough velocity
+                              if (info.offset.x < -60 || info.velocity.x < -300) {
+                                if (navigator.vibrate) navigator.vibrate(50);
+                                deleteExpense(expense.id);
+                              }
+                            }}
+                            className="relative bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between z-10"
+                            style={{ touchAction: "pan-y" }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <CategoryIcon category={expense.category} />
+                              <div>
+                                <h4 className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</h4>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                  {new Date(expense.date).toLocaleDateString()} • {profiles[expense.paidBy].name}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                ${expense.amount.toFixed(2)}
+                              </span>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
