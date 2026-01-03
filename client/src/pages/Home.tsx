@@ -43,7 +43,10 @@ import {
   Search,
   Menu,
   LayoutDashboard,
-  List
+  List,
+  Fuel,
+  PawPrint,
+  Heart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -59,7 +62,7 @@ import { Lock } from "lucide-react";
 // --- Types ---
 type Partner = "A" | "B";
 type SplitType = "50/50" | "income" | "custom";
-type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Other";
+type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Gas" | "Pet" | "Health" | "Other";
 type Frequency = "Monthly" | "Weekly";
 type TabView = "home" | "insights" | "planning" | "menu";
 
@@ -111,6 +114,9 @@ const CATEGORIES: { value: Category; label: string; icon: any; color: string; he
   { value: "Rent", label: "Rent", icon: HomeIcon, color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400", hex: "#3b82f6" },
   { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400", hex: "#eab308" },
   { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400", hex: "#ec4899" },
+  { value: "Gas", label: "Gas", icon: Fuel, color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400", hex: "#f97316" },
+  { value: "Pet", label: "Pet", icon: PawPrint, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400", hex: "#f59e0b" },
+  { value: "Health", label: "Health", icon: Heart, color: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400", hex: "#ef4444" },
   { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400", hex: "#6b7280" },
 ];
 

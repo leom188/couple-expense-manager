@@ -1,1 +1,2 @@
 - [x] Push Notifications for bill reminders
+- [x] Add Gas, Pet, and Health expense categories
