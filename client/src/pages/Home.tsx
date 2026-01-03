@@ -1008,9 +1008,57 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-heading font-semibold text-slate-800 dark:text-slate-200">Recent Transactions</h2>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={exportToCSV} className="text-slate-500 hover:text-indigo-600">
-                  <Download size={16} className="mr-2" /> Export
-                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-slate-500 hover:text-indigo-600">
+                      <List size={16} className="mr-2" /> Data Options
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2" align="end">
+                    <div className="space-y-1">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-slate-600 dark:text-slate-300"
+                        onClick={exportToCSV}
+                      >
+                        <Download size={16} className="mr-2" /> Export CSV
+                      </Button>
+                      <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 size={16} className="mr-2" /> Reset App Data
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Reset Application?</DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4 space-y-4">
+                            <p className="text-slate-600 dark:text-slate-300">
+                              This will permanently delete all expenses, recurring items, and settings. This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={() => {}}>Cancel</Button>
+                              <Button 
+                                variant="destructive" 
+                                onClick={() => {
+                                  localStorage.clear();
+                                  window.location.reload();
+                                }}
+                              >
+                                Yes, Reset Everything
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <span className="text-sm text-slate-400">{filteredExpenses.length} entries</span>
               </div>
             </div>
@@ -1537,59 +1585,7 @@ export default function Home() {
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
-            {/* Data Management */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                <Download size={18} /> Data Management
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  variant="outline" 
-                  className="h-auto py-3 flex flex-col gap-1 items-center justify-center border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  onClick={exportToCSV}
-                >
-                  <Download size={20} className="text-indigo-500" />
-                  <span className="text-xs font-medium">Export CSV</span>
-                </Button>
 
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className="h-auto py-3 flex flex-col gap-1 items-center justify-center border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-                    >
-                      <Trash2 size={20} className="text-red-500" />
-                      <span className="text-xs font-medium text-red-600 dark:text-red-400">Reset App</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Reset Application?</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4">
-                      <p className="text-slate-600 dark:text-slate-300">
-                        This will permanently delete all expenses, recurring items, and settings. This action cannot be undone.
-                      </p>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => {}}>Cancel</Button>
-                        <Button 
-                          variant="destructive" 
-                          onClick={() => {
-                            localStorage.clear();
-                            window.location.reload();
-                          }}
-                        >
-                          Yes, Reset Everything
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-
-            <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Split Preferences */}
             <div className="space-y-4">
