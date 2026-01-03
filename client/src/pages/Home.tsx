@@ -662,25 +662,25 @@ export default function Home() {
               </PopoverContent>
             </Popover>
 
-            {/* Desktop Only Buttons */}
-            <div className="hidden md:flex items-center gap-3">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-full"
-                onClick={toggleTheme}
-              >
-                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-full"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
-            </div>
+            {/* Theme Toggle (Visible on all devices) */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full"
+              onClick={toggleTheme}
+            >
+              {theme === 'dark' ? <Sun className="h-6 w-6 text-slate-600 dark:text-slate-300" /> : <Moon className="h-6 w-6 text-slate-600 dark:text-slate-300" />}
+            </Button>
+
+            {/* Settings Button (Visible on all devices) */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-6 w-6 text-slate-600 dark:text-slate-300" />
+            </Button>
           </div>
         </div>
       </header>
@@ -1437,22 +1437,7 @@ export default function Home() {
                 <Settings size={18} /> App Settings
               </h3>
               
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                    {theme === 'dark' ? <Moon size={20} className="text-indigo-500" /> : <Sun size={20} className="text-amber-500" />}
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">Appearance</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" onClick={toggleTheme}>
-                  Toggle
-                </Button>
-              </div>
+
 
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                 <div className="flex items-center gap-3">
