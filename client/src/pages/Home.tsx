@@ -193,6 +193,9 @@ export default function Home() {
       Rent: 0,
       Utilities: 0,
       Fun: 0,
+      Gas: 0,
+      Pet: 0,
+      Health: 0,
       Other: 0
     };
   });
@@ -651,6 +654,9 @@ export default function Home() {
       Rent: { spent: 0, limit: 0, percentage: 0 },
       Utilities: { spent: 0, limit: 0, percentage: 0 },
       Fun: { spent: 0, limit: 0, percentage: 0 },
+      Gas: { spent: 0, limit: 0, percentage: 0 },
+      Pet: { spent: 0, limit: 0, percentage: 0 },
+      Health: { spent: 0, limit: 0, percentage: 0 },
       Other: { spent: 0, limit: 0, percentage: 0 },
     };
 

@@ -1,3 +1,4 @@
 - [x] Push Notifications for bill reminders
 - [x] Add Gas, Pet, and Health expense categories
 - [x] Redesign app icon with Arc Browser-inspired aesthetic
+- [x] Fix error in Insights section
