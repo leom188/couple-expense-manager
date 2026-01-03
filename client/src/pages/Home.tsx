@@ -282,9 +282,12 @@ export default function Home() {
   // --- Logic ---
   const addExpense = () => {
     if (!description || !amount) {
+      if (navigator.vibrate) navigator.vibrate(200); // Error vibration
       toast.error("Please fill in all fields");
       return;
     }
+
+    if (navigator.vibrate) navigator.vibrate(50); // Success vibration
 
     const newExpense: Expense = {
       id: crypto.randomUUID(),
@@ -357,6 +360,7 @@ export default function Home() {
   };
 
   const deleteExpense = (id: string) => {
+    if (navigator.vibrate) navigator.vibrate(50);
     setExpenses(expenses.filter((e) => e.id !== id));
     toast.success("Expense deleted");
   };
@@ -915,40 +919,64 @@ export default function Home() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex items-center justify-between"
+                      className="relative"
                     >
-                      <div className="flex items-center gap-4">
-                        <CategoryIcon category={expense.category} />
-                        <div>
-                          <h4 className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</h4>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            <span>{new Date(expense.date).toLocaleDateString()}</span>
-                            <span>•</span>
-                            <div className="flex items-center gap-1">
-                              <img 
-                                src={profiles[expense.paidBy].avatar} 
-                                alt={profiles[expense.paidBy].name}
-                                className="w-4 h-4 rounded-full object-cover"
-                              />
-                              <span className={expense.paidBy === 'A' ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-pink-600 dark:text-pink-400 font-medium"}>
-                                Paid by {profiles[expense.paidBy].name}
-                              </span>
+                      {/* Swipe Background (Delete Action) */}
+                      <div className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-6">
+                        <Trash2 className="text-white" size={20} />
+                      </div>
+
+                      {/* Swipeable Card */}
+                      <motion.div
+                        drag="x"
+                        dragConstraints={{ left: -100, right: 0 }}
+                        dragElastic={0.1}
+                        onDragEnd={(_, info) => {
+                          if (info.offset.x < -80) {
+                            if (navigator.vibrate) navigator.vibrate(50);
+                            deleteExpense(expense.id);
+                          }
+                        }}
+                        className="relative bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex items-center justify-between z-10"
+                        style={{ touchAction: "pan-y" }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <CategoryIcon category={expense.category} />
+                          <div>
+                            <h4 className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</h4>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span>{new Date(expense.date).toLocaleDateString()}</span>
+                              <span>•</span>
+                              <div className="flex items-center gap-1">
+                                <img 
+                                  src={profiles[expense.paidBy].avatar} 
+                                  alt={profiles[expense.paidBy].name}
+                                  className="w-4 h-4 rounded-full object-cover"
+                                />
+                                <span className={expense.paidBy === 'A' ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-pink-600 dark:text-pink-400 font-medium"}>
+                                  Paid by {profiles[expense.paidBy].name}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <span className="font-heading font-semibold text-lg text-slate-900 dark:text-slate-100">
-                          ${expense.amount.toFixed(2)}
-                        </span>
-                        <button 
-                          onClick={() => deleteExpense(expense.id)}
-                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <span className="font-heading font-semibold text-lg text-slate-900 dark:text-slate-100">
+                            ${expense.amount.toFixed(2)}
+                          </span>
+                          {/* Desktop Delete Button (Hidden on Mobile) */}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteExpense(expense.id);
+                            }}
+                            className="hidden md:block p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </motion.div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -1079,14 +1107,20 @@ export default function Home() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pb-safe z-40">
         <div className="flex justify-around items-center h-16">
           <button 
-            onClick={() => setActiveTab("home")}
+            onClick={() => {
+              setActiveTab("home");
+              if (navigator.vibrate) navigator.vibrate(10);
+            }}
             className={cn("flex flex-col items-center gap-1 w-16", activeTab === "home" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
           >
             <HomeIcon size={24} strokeWidth={activeTab === "home" ? 2.5 : 2} />
             <span className="text-[10px] font-medium">Home</span>
           </button>
           <button 
-            onClick={() => setActiveTab("insights")}
+            onClick={() => {
+              setActiveTab("insights");
+              if (navigator.vibrate) navigator.vibrate(10);
+            }}
             className={cn("flex flex-col items-center gap-1 w-16", activeTab === "insights" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
           >
             <BarChart3 size={24} strokeWidth={activeTab === "insights" ? 2.5 : 2} />
@@ -1104,14 +1138,20 @@ export default function Home() {
           </div>
 
           <button 
-            onClick={() => setActiveTab("planning")}
+            onClick={() => {
+              setActiveTab("planning");
+              if (navigator.vibrate) navigator.vibrate(10);
+            }}
             className={cn("flex flex-col items-center gap-1 w-16", activeTab === "planning" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
           >
             <CalendarIcon size={24} strokeWidth={activeTab === "planning" ? 2.5 : 2} />
             <span className="text-[10px] font-medium">Plan</span>
           </button>
           <button 
-            onClick={() => setActiveTab("menu")}
+            onClick={() => {
+              setActiveTab("menu");
+              if (navigator.vibrate) navigator.vibrate(10);
+            }}
             className={cn("flex flex-col items-center gap-1 w-16", activeTab === "menu" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
           >
             <Menu size={24} strokeWidth={activeTab === "menu" ? 2.5 : 2} />
