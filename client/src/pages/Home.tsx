@@ -51,6 +51,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useSecurity } from "@/contexts/SecurityContext";
+import { Lock } from "lucide-react";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -144,6 +146,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
+  const { hasPin, setPin, removePin } = useSecurity();
+  const [pinInput, setPinInput] = useState("");
   
   // --- State ---
   const [expenses, setExpenses] = useState<Expense[]>(() => {
@@ -1259,6 +1263,165 @@ export default function Home() {
             <DialogTitle className="font-heading text-2xl dark:text-white">Profile Settings</DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-4">
+            {/* App Settings */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                <Settings size={18} /> App Settings
+              </h3>
+              
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    {theme === 'dark' ? <Moon size={20} className="text-indigo-500" /> : <Sun size={20} className="text-amber-500" />}
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">Appearance</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" onClick={toggleTheme}>
+                  Toggle
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    <Lock size={20} className={hasPin ? "text-emerald-500" : "text-slate-400"} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">App Lock</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {hasPin ? 'PIN Enabled' : 'Secure your app'}
+                    </p>
+                  </div>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant={hasPin ? "outline" : "default"} size="sm">
+                      {hasPin ? "Change" : "Enable"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{hasPin ? "Manage App Lock" : "Set App PIN"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Enter 4-digit PIN</Label>
+                        <Input 
+                          type="password" 
+                          maxLength={4} 
+                          placeholder="0000" 
+                          value={pinInput}
+                          onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                          className="text-center text-2xl tracking-widest"
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        {hasPin && (
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => {
+                              removePin();
+                              setPinInput("");
+                              toast.success("App Lock disabled");
+                            }}
+                          >
+                            Disable
+                          </Button>
+                        )}
+                        <Button 
+                          onClick={() => {
+                            if (pinInput.length === 4) {
+                              setPin(pinInput);
+                              setPinInput("");
+                              toast.success(hasPin ? "PIN updated" : "App Lock enabled");
+                            } else {
+                              toast.error("PIN must be 4 digits");
+                            }
+                          }}
+                        >
+                          Save PIN
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
+            {/* Security Settings */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Lock size={18} /> Security
+              </h3>
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className="space-y-1">
+                  <div className="font-medium text-slate-900 dark:text-slate-100">App Lock</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {hasPin ? "PIN is enabled" : "Secure your data with a PIN"}
+                  </div>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant={hasPin ? "outline" : "default"} size="sm">
+                      {hasPin ? "Change" : "Enable"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{hasPin ? "Manage App Lock" : "Set App PIN"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Enter 4-digit PIN</Label>
+                        <Input 
+                          type="password" 
+                          maxLength={4} 
+                          placeholder="0000" 
+                          value={pinInput}
+                          onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                          className="text-center text-2xl tracking-widest"
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        {hasPin && (
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => {
+                              removePin();
+                              setPinInput("");
+                            }}
+                          >
+                            Disable
+                          </Button>
+                        )}
+                        <Button 
+                          onClick={() => {
+                            if (pinInput.length === 4) {
+                              setPin(pinInput);
+                              setPinInput("");
+                            } else {
+                              toast.error("PIN must be 4 digits");
+                            }
+                          }}
+                        >
+                          Save PIN
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
             {/* Partner A Settings */}
             <div className="space-y-4">
               <h3 className="font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
