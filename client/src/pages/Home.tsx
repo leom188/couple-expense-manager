@@ -1650,7 +1650,7 @@ export default function Home() {
                             type="number"
                             min="0"
                             max="100"
-                            value={defaultCustomSplitA}
+                            value={defaultCustomSplitA || ""}
                             onChange={(e) => {
                               const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
                               setDefaultCustomSplitA(val);
@@ -1746,17 +1746,6 @@ export default function Home() {
                   className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
               </div>
-                <div className="space-y-2">
-                  <Label htmlFor="income-b" className="dark:text-slate-300">Monthly Income</Label>
-                  <Input
-                    id="income-b"
-                    type="number"
-                    value={profiles.B.income}
-                    onChange={(e) => updateProfile("B", "income", parseFloat(e.target.value) || 0)}
-                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                  />
-                </div>
-              </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-300">Avatar</Label>
                 <div className="flex gap-2 overflow-x-auto pb-2">
@@ -1787,6 +1776,7 @@ export default function Home() {
                   />
                 </div>
               </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
