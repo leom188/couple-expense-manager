@@ -3,3 +3,5 @@
 - [x] Redesign app icon with Arc Browser-inspired aesthetic
 - [x] Fix error in Insights section
 - [x] Fix Android PWA icon not showing on home screen
+- [x] Fix PWA icon not displaying on Android Chrome
+- [x] Change default PWA name to "SharedWallet"

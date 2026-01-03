@@ -1,5 +1,5 @@
 {
-  "name": "SharedWallet - Couple Expense Manager",
+  "name": "SharedWallet",
   "short_name": "SharedWallet",
   "description": "A minimalist expense manager for couples to track shared finances.",
   "start_url": "/",
