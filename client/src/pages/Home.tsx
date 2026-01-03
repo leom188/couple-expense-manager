@@ -1615,7 +1615,7 @@ export default function Home() {
                         <Input
                           id="income-a"
                           type="number"
-                          value={profiles.A.income}
+                          value={profiles.A.income || ""}
                           onChange={(e) => updateProfile("A", "income", parseFloat(e.target.value) || 0)}
                           className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                         />
@@ -1625,7 +1625,7 @@ export default function Home() {
                         <Input
                           id="income-b"
                           type="number"
-                          value={profiles.B.income}
+                          value={profiles.B.income || ""}
                           onChange={(e) => updateProfile("B", "income", parseFloat(e.target.value) || 0)}
                           className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                         />
