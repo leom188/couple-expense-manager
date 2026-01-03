@@ -5,3 +5,4 @@
 - [x] Fix Android PWA icon not showing on home screen
 - [x] Fix PWA icon not displaying on Android Chrome
 - [x] Change default PWA name to "SharedWallet"
+- [x] Implement custom splash screen with SharedWallet logo

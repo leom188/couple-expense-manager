@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
@@ -6,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SecurityProvider } from "./contexts/SecurityContext";
 import LockScreen from "./components/LockScreen";
+import { SplashScreen } from "./components/SplashScreen";
 import Home from "./pages/Home";
 
 function Router() {
@@ -26,8 +28,25 @@ function Router() {
 // - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
+  const [showSplash, setShowSplash] = useState(() => {
+    // Only show splash on first load or after a long absence (e.g., PWA launch)
+    const lastVisit = sessionStorage.getItem('lastVisit');
+    const now = Date.now();
+    if (!lastVisit) {
+      sessionStorage.setItem('lastVisit', now.toString());
+      return true;
+    }
+    // Show splash if more than 30 minutes since last visit
+    const timeSinceLastVisit = now - parseInt(lastVisit, 10);
+    sessionStorage.setItem('lastVisit', now.toString());
+    return timeSinceLastVisit > 30 * 60 * 1000;
+  });
+
   return (
     <ErrorBoundary>
+      {showSplash && (
+        <SplashScreen onFinish={() => setShowSplash(false)} minDuration={1800} />
+      )}
       <SecurityProvider>
         <ThemeProvider
           defaultTheme="light"
