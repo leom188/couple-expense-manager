@@ -909,13 +909,60 @@ export default function Home() {
                 {theme === 'dark' ? "Light Mode" : "Dark Mode"}
               </Button>
 
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                onClick={exportToCSV}
-              >
-                <Download className="mr-3" /> Export Data
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  >
+                    <List className="mr-3" /> Data Options
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[calc(100vw-32px)] p-2 mx-4" align="center">
+                  <div className="space-y-1">
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start text-slate-600 dark:text-slate-300 h-12 text-base"
+                      onClick={exportToCSV}
+                    >
+                      <Download size={18} className="mr-3" /> Export CSV
+                    </Button>
+                    <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 h-12 text-base"
+                        >
+                          <Trash2 size={18} className="mr-3" /> Reset App Data
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Reset Application?</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                          <p className="text-slate-600 dark:text-slate-300">
+                            This will permanently delete all expenses, recurring items, and settings. This action cannot be undone.
+                          </p>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => {}}>Cancel</Button>
+                            <Button 
+                              variant="destructive" 
+                              onClick={() => {
+                                localStorage.clear();
+                                window.location.reload();
+                              }}
+                            >
+                              Yes, Reset Everything
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
         </div>
