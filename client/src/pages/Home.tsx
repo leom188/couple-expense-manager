@@ -203,6 +203,7 @@ export default function Home() {
   const [recFrequency, setRecFrequency] = useState<Frequency>("Monthly");
   const [recCategory, setRecCategory] = useState<Category>("Rent");
   const [editingRecId, setEditingRecId] = useState<string | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -293,21 +294,48 @@ export default function Home() {
 
     if (navigator.vibrate) navigator.vibrate(50); // Success vibration
 
-    const newExpense: Expense = {
-      id: crypto.randomUUID(),
-      description,
-      amount: parseFloat(amount),
-      paidBy,
-      splitType,
-      category,
-      date: new Date().toISOString(),
-    };
+    if (editingExpenseId) {
+      // Update existing expense
+      setExpenses(prev => prev.map(e => 
+        e.id === editingExpenseId ? {
+          ...e,
+          description,
+          amount: parseFloat(amount),
+          paidBy,
+          splitType,
+          category,
+        } : e
+      ));
+      setEditingExpenseId(null);
+      toast.success("Expense updated successfully");
+    } else {
+      // Add new expense
+      const newExpense: Expense = {
+        id: crypto.randomUUID(),
+        description,
+        amount: parseFloat(amount),
+        paidBy,
+        splitType,
+        category,
+        date: new Date().toISOString(),
+      };
+      setExpenses([newExpense, ...expenses]);
+      toast.success("Expense added successfully");
+    }
 
-    setExpenses([newExpense, ...expenses]);
     setDescription("");
     setAmount("");
     setIsFormOpen(false);
-    toast.success("Expense added successfully");
+  };
+
+  const startEditingExpense = (expense: Expense) => {
+    setEditingExpenseId(expense.id);
+    setDescription(expense.description);
+    setAmount(expense.amount.toString());
+    setPaidBy(expense.paidBy);
+    setSplitType(expense.splitType);
+    setCategory(expense.category);
+    setIsFormOpen(true);
   };
 
   const addOrUpdateRecurringExpense = () => {
@@ -365,8 +393,20 @@ export default function Home() {
 
   const deleteExpense = (id: string) => {
     if (navigator.vibrate) navigator.vibrate(50);
+    const expenseToDelete = expenses.find(e => e.id === id);
     setExpenses(expenses.filter((e) => e.id !== id));
-    toast.success("Expense deleted");
+    
+    toast.success("Expense deleted", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          if (expenseToDelete) {
+            setExpenses(prev => [expenseToDelete, ...prev]);
+            toast.success("Expense restored");
+          }
+        }
+      }
+    });
   };
 
   const deleteRecurring = (id: string) => {
@@ -656,23 +696,35 @@ export default function Home() {
                           exit={{ opacity: 0, scale: 0.95 }}
                           className="relative"
                         >
-                          {/* Swipe Background (Delete Action) */}
-                          <div className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-6">
-                            <Trash2 className="text-white" size={20} />
+                          {/* Swipe Backgrounds */}
+                          <div className="absolute inset-0 rounded-2xl overflow-hidden flex">
+                            {/* Edit Action (Left Swipe) */}
+                            <div className="w-1/2 bg-indigo-500 flex items-center justify-start pl-6">
+                              <Edit2 className="text-white" size={20} />
+                            </div>
+                            {/* Delete Action (Right Swipe) */}
+                            <div className="w-1/2 bg-red-500 flex items-center justify-end pr-6">
+                              <Trash2 className="text-white" size={20} />
+                            </div>
                           </div>
 
                           {/* Swipeable Card */}
                           <motion.div
                             drag="x"
                             dragConstraints={{ left: 0, right: 0 }}
-                            dragElastic={{ left: 0.5, right: 0.05 }}
+                            dragElastic={{ left: 0.5, right: 0.5 }}
                             dragSnapToOrigin
                             whileDrag={{ scale: 0.98 }}
                             onDragEnd={(_, info) => {
-                              // Trigger delete if dragged far enough (more than 60px) or with enough velocity
+                              // Swipe Left to Delete
                               if (info.offset.x < -60 || info.velocity.x < -300) {
                                 if (navigator.vibrate) navigator.vibrate(50);
                                 deleteExpense(expense.id);
+                              }
+                              // Swipe Right to Edit
+                              else if (info.offset.x > 60 || info.velocity.x > 300) {
+                                if (navigator.vibrate) navigator.vibrate(50);
+                                startEditingExpense(expense);
                               }
                             }}
                             className="relative bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between z-10"
@@ -1212,7 +1264,9 @@ export default function Home() {
               className="relative w-full bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6" />
-              <h2 className="text-2xl font-heading font-bold mb-6 dark:text-white">New Expense</h2>
+              <h2 className="text-2xl font-heading font-bold mb-6 dark:text-white">
+                {editingExpenseId ? "Edit Expense" : "New Expense"}
+              </h2>
               
               <div className="space-y-5">
                 <div className="space-y-2">
@@ -1274,7 +1328,7 @@ export default function Home() {
                   onClick={addExpense}
                   className="w-full h-14 text-lg rounded-2xl bg-indigo-600 text-white mt-4"
                 >
-                  Save Expense
+                  {editingExpenseId ? "Update Expense" : "Save Expense"}
                 </Button>
               </div>
             </motion.div>
