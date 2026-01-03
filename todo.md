@@ -2,3 +2,4 @@
 - [x] Add Gas, Pet, and Health expense categories
 - [x] Redesign app icon with Arc Browser-inspired aesthetic
 - [x] Fix error in Insights section
+- [x] Fix Android PWA icon not showing on home screen
