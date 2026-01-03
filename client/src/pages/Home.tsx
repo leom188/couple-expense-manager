@@ -132,13 +132,13 @@ const CategoryIcon = ({ category }: { category: Category }) => {
   );
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, currency }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-slate-800 p-3 border border-slate-100 dark:border-slate-700 shadow-lg rounded-xl text-sm">
         <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">{label}</p>
         <p className="text-indigo-600 dark:text-indigo-400 font-semibold">
-          ${payload[0].value.toFixed(2)}
+          {currency}{payload[0].value.toFixed(2)}
         </p>
       </div>
     );
@@ -219,6 +219,10 @@ export default function Home() {
   const [defaultCustomSplitA, setDefaultCustomSplitA] = useState<number>(() => {
     return parseInt(localStorage.getItem("defaultCustomSplitA") || "50");
   });
+
+  const [currency, setCurrency] = useState(() => {
+    return localStorage.getItem("currency") || "$";
+  });
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -239,6 +243,10 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("defaultCustomSplitA", defaultCustomSplitA.toString());
   }, [defaultCustomSplitA]);
+
+  useEffect(() => {
+    localStorage.setItem("currency", currency);
+  }, [currency]);
 
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
@@ -279,7 +287,7 @@ export default function Home() {
           // Add notification
           newNotifications.push({
             id: crypto.randomUUID(),
-            message: `Auto-added recurring expense: ${rec.description} ($${rec.amount})`,
+            message: `Auto-added recurring expense: ${rec.description} ({currency}{rec.amount})`,
             date: new Date().toISOString(),
             read: false
           });
@@ -695,7 +703,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-heading font-light text-slate-900 dark:text-white">
-                    ${settlementAmount}
+                    {currency}{settlementAmount}
                   </span>
                 </div>
                 <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">
@@ -776,7 +784,7 @@ export default function Home() {
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="font-semibold text-slate-900 dark:text-slate-100">
-                                ${expense.amount.toFixed(2)}
+                                {currency}{expense.amount.toFixed(2)}
                               </span>
                             </div>
                           </motion.div>
@@ -801,7 +809,7 @@ export default function Home() {
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#f1f5f9'} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                      <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ fill: 'transparent' }} />
                       <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                         {chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -825,7 +833,7 @@ export default function Home() {
                     <div key={cat.value} className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-600 dark:text-slate-300">{cat.label}</span>
-                        <span className="text-slate-500">${data.spent.toFixed(0)} / ${data.limit}</span>
+                        <span className="text-slate-500">{currency}{data.spent.toFixed(0)} / {currency}{data.limit}</span>
                       </div>
                       <Progress value={data.percentage} className="h-2" indicatorClassName={cat.color.split(" ")[0].replace("bg-", "bg-")} />
                     </div>
@@ -928,7 +936,7 @@ export default function Home() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-5xl font-heading font-light text-slate-900 dark:text-white">
-                  ${settlementAmount}
+                  {currency}{settlementAmount}
                 </span>
               </div>
               <div className="mt-4 inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium">
@@ -950,7 +958,7 @@ export default function Home() {
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#f1f5f9'} />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                      <Tooltip content={<CustomTooltip currency={currency} />} cursor={{ fill: 'transparent' }} />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={50}>
                         {chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -983,7 +991,7 @@ export default function Home() {
                           <span className="font-medium text-slate-700 dark:text-slate-300">{cat.label}</span>
                         </div>
                         <span className={cn("font-medium", isOverBudget ? "text-red-500" : "text-slate-500 dark:text-slate-400")}>
-                          ${data.spent.toFixed(0)} / ${data.limit}
+                          {currency}{data.spent.toFixed(0)} / {currency}{data.limit}
                         </span>
                       </div>
                       <Progress 
@@ -1083,7 +1091,7 @@ export default function Home() {
                         
                         <div className="flex items-center gap-4">
                           <span className="font-heading font-semibold text-lg text-slate-900 dark:text-slate-100">
-                            ${expense.amount.toFixed(2)}
+                            {currency}{expense.amount.toFixed(2)}
                           </span>
                           {/* Desktop Delete Button (Hidden on Mobile) */}
                           <button 
@@ -1140,7 +1148,7 @@ export default function Home() {
                     <div className="space-y-2">
                       <Label className="dark:text-slate-300">Amount</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">{currency}</span>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
@@ -1446,6 +1454,33 @@ export default function Home() {
                 </Button>
               </div>
 
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
+                    <span className="text-xl font-bold text-emerald-500">{currency}</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">Currency</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Current symbol: {currency}
+                    </p>
+                  </div>
+                </div>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger className="w-[80px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="$">$</SelectItem>
+                    <SelectItem value="€">€</SelectItem>
+                    <SelectItem value="£">£</SelectItem>
+                    <SelectItem value="¥">¥</SelectItem>
+                    <SelectItem value="₹">₹</SelectItem>
+                    <SelectItem value="kr">kr</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
             </div>
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
@@ -1507,6 +1542,60 @@ export default function Home() {
                           }}
                         >
                           Save PIN
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
+
+            {/* Data Management */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                <Download size={18} /> Data Management
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  variant="outline" 
+                  className="h-auto py-3 flex flex-col gap-1 items-center justify-center border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  onClick={exportToCSV}
+                >
+                  <Download size={20} className="text-indigo-500" />
+                  <span className="text-xs font-medium">Export CSV</span>
+                </Button>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="h-auto py-3 flex flex-col gap-1 items-center justify-center border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                    >
+                      <Trash2 size={20} className="text-red-500" />
+                      <span className="text-xs font-medium text-red-600 dark:text-red-400">Reset App</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Reset Application?</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                      <p className="text-slate-600 dark:text-slate-300">
+                        This will permanently delete all expenses, recurring items, and settings. This action cannot be undone.
+                      </p>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => {}}>Cancel</Button>
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => {
+                            localStorage.clear();
+                            window.location.reload();
+                          }}
+                        >
+                          Yes, Reset Everything
                         </Button>
                       </div>
                     </div>
@@ -1733,7 +1822,7 @@ export default function Home() {
                   {cat.label}
                 </Label>
                 <div className="col-span-2 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
                   <Input
                     id={`budget-${cat.value}`}
                     type="number"
@@ -1772,7 +1861,7 @@ export default function Home() {
                   className="bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
                   <Input 
                     type="number" 
                     placeholder="0.00" 
@@ -1818,7 +1907,7 @@ export default function Home() {
                         <CategoryIcon category={rec.category} />
                         <div>
                           <p className="font-medium text-slate-900 dark:text-white">{rec.description}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{rec.frequency} • ${rec.amount}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{rec.frequency} • {currency}{rec.amount}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
