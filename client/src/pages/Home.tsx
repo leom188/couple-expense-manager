@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Calendar } from "@/components/ui/calendar";
 import { 
   Plus, 
   Trash2, 
@@ -30,13 +31,18 @@ import {
   Upload,
   BarChart3,
   PieChart,
-  Repeat
+  Repeat,
+  Calendar as CalendarIcon,
+  Bell,
+  Edit2,
+  Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -64,6 +70,13 @@ interface RecurringExpense {
   category: Category;
   frequency: Frequency;
   nextDueDate: string;
+}
+
+interface Notification {
+  id: string;
+  message: string;
+  date: string;
+  read: boolean;
 }
 
 interface UserProfile {
@@ -132,6 +145,11 @@ export default function Home() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    const saved = localStorage.getItem("notifications");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [profiles, setProfiles] = useState<Profiles>(() => {
     const saved = localStorage.getItem("profiles");
     return saved ? JSON.parse(saved) : {
@@ -160,12 +178,14 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Recurring form state
   const [recDescription, setRecDescription] = useState("");
   const [recAmount, setRecAmount] = useState("");
   const [recFrequency, setRecFrequency] = useState<Frequency>("Monthly");
   const [recCategory, setRecCategory] = useState<Category>("Rent");
+  const [editingRecId, setEditingRecId] = useState<string | null>(null);
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -187,11 +207,16 @@ export default function Home() {
     localStorage.setItem("recurringExpenses", JSON.stringify(recurringExpenses));
   }, [recurringExpenses]);
 
+  useEffect(() => {
+    localStorage.setItem("notifications", JSON.stringify(notifications));
+  }, [notifications]);
+
   // Check for due recurring expenses on load
   useEffect(() => {
     const checkRecurring = () => {
       const now = new Date();
       let newExpenses: Expense[] = [];
+      let newNotifications: Notification[] = [];
       let updatedRecurring = [...recurringExpenses];
       let hasUpdates = false;
 
@@ -210,6 +235,14 @@ export default function Home() {
             date: new Date().toISOString(),
           });
 
+          // Add notification
+          newNotifications.push({
+            id: crypto.randomUUID(),
+            message: `Auto-added recurring expense: ${rec.description} ($${rec.amount})`,
+            date: new Date().toISOString(),
+            read: false
+          });
+
           // Update next due date
           const nextDate = new Date(dueDate);
           if (rec.frequency === "Monthly") {
@@ -225,12 +258,13 @@ export default function Home() {
       if (hasUpdates) {
         setExpenses(prev => [...newExpenses, ...prev]);
         setRecurringExpenses(updatedRecurring);
+        setNotifications(prev => [...newNotifications, ...prev]);
         toast.success(`Added ${newExpenses.length} recurring expense(s)`);
       }
     };
 
     checkRecurring();
-  }, [recurringExpenses]); // Dependency on recurringExpenses ensures we check when list changes, but logic handles dates
+  }, [recurringExpenses]);
 
   // --- Logic ---
   const addExpense = () => {
@@ -256,27 +290,57 @@ export default function Home() {
     toast.success("Expense added successfully");
   };
 
-  const addRecurringExpense = () => {
+  const addOrUpdateRecurringExpense = () => {
     if (!recDescription || !recAmount) {
       toast.error("Please fill in all fields");
       return;
     }
 
-    const newRec: RecurringExpense = {
-      id: crypto.randomUUID(),
-      description: recDescription,
-      amount: parseFloat(recAmount),
-      paidBy: "A", // Default, could add selector
-      splitType: "50/50", // Default
-      category: recCategory,
-      frequency: recFrequency,
-      nextDueDate: new Date().toISOString(), // Due immediately
-    };
+    if (editingRecId) {
+      // Update existing
+      setRecurringExpenses(prev => prev.map(rec => 
+        rec.id === editingRecId ? {
+          ...rec,
+          description: recDescription,
+          amount: parseFloat(recAmount),
+          category: recCategory,
+          frequency: recFrequency
+        } : rec
+      ));
+      setEditingRecId(null);
+      toast.success("Recurring expense updated");
+    } else {
+      // Add new
+      const newRec: RecurringExpense = {
+        id: crypto.randomUUID(),
+        description: recDescription,
+        amount: parseFloat(recAmount),
+        paidBy: "A", // Default
+        splitType: "50/50", // Default
+        category: recCategory,
+        frequency: recFrequency,
+        nextDueDate: new Date().toISOString(), // Due immediately
+      };
+      setRecurringExpenses([...recurringExpenses, newRec]);
+      toast.success("Recurring expense set up");
+    }
 
-    setRecurringExpenses([...recurringExpenses, newRec]);
     setRecDescription("");
     setRecAmount("");
-    toast.success("Recurring expense set up");
+  };
+
+  const startEditingRecurring = (rec: RecurringExpense) => {
+    setEditingRecId(rec.id);
+    setRecDescription(rec.description);
+    setRecAmount(rec.amount.toString());
+    setRecCategory(rec.category);
+    setRecFrequency(rec.frequency);
+  };
+
+  const cancelEditingRecurring = () => {
+    setEditingRecId(null);
+    setRecDescription("");
+    setRecAmount("");
   };
 
   const deleteExpense = (id: string) => {
@@ -286,7 +350,12 @@ export default function Home() {
 
   const deleteRecurring = (id: string) => {
     setRecurringExpenses(recurringExpenses.filter(r => r.id !== id));
+    if (editingRecId === id) cancelEditingRecurring();
     toast.success("Recurring expense removed");
+  };
+
+  const markNotificationsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const updateProfile = (partner: Partner, field: keyof UserProfile, value: string) => {
@@ -400,6 +469,8 @@ export default function Home() {
     return progress;
   }, [expenses, budgets]);
 
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0">
       
@@ -417,6 +488,50 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Notifications */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50 relative"
+                  onClick={markNotificationsRead}
+                >
+                  <Bell className="h-5 w-5 text-slate-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0 rounded-2xl shadow-xl border-slate-100" align="end">
+                <div className="p-4 border-b border-slate-100 font-medium">Notifications</div>
+                <ScrollArea className="h-[300px]">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500 text-sm">No notifications yet</div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                      {notifications.map(n => (
+                        <div key={n.id} className={cn("p-4 text-sm", !n.read && "bg-indigo-50/50")}>
+                          <p className="text-slate-800">{n.message}</p>
+                          <p className="text-xs text-slate-400 mt-1">{new Date(n.date).toLocaleDateString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
+
+            {/* Calendar Button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              onClick={() => setIsCalendarOpen(true)}
+            >
+              <CalendarIcon className="h-5 w-5 text-slate-600" />
+            </Button>
+
             {/* Recurring Button */}
             <Button 
               variant="outline" 
@@ -972,15 +1087,20 @@ export default function Home() {
       </Dialog>
 
       {/* --- Recurring Expenses Modal --- */}
-      <Dialog open={isRecurringOpen} onOpenChange={setIsRecurringOpen}>
+      <Dialog open={isRecurringOpen} onOpenChange={(open) => {
+        setIsRecurringOpen(open);
+        if (!open) cancelEditingRecurring();
+      }}>
         <DialogContent className="sm:max-w-[500px] rounded-3xl">
           <DialogHeader>
             <DialogTitle className="font-heading text-2xl">Recurring Expenses</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {/* Add New Recurring */}
+            {/* Add/Edit Form */}
             <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <h3 className="font-medium text-slate-900">Add New Recurring</h3>
+              <h3 className="font-medium text-slate-900">
+                {editingRecId ? "Edit Recurring Expense" : "Add New Recurring"}
+              </h3>
               <div className="grid grid-cols-2 gap-3">
                 <Input 
                   placeholder="Description" 
@@ -1012,7 +1132,14 @@ export default function Home() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={addRecurringExpense} className="w-full bg-slate-900 text-white">Add Recurring</Button>
+              <div className="flex gap-2">
+                {editingRecId && (
+                  <Button onClick={cancelEditingRecurring} variant="outline" className="flex-1">Cancel</Button>
+                )}
+                <Button onClick={addOrUpdateRecurringExpense} className="flex-1 bg-slate-900 text-white">
+                  {editingRecId ? "Update" : "Add Recurring"}
+                </Button>
+              </div>
             </div>
 
             {/* List Existing */}
@@ -1031,14 +1158,53 @@ export default function Home() {
                           <p className="text-xs text-slate-500">{rec.frequency} • ${rec.amount}</p>
                         </div>
                       </div>
-                      <button onClick={() => deleteRecurring(rec.id)} className="text-slate-300 hover:text-red-500">
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => startEditingRecurring(rec)} className="p-2 text-slate-300 hover:text-indigo-600">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => deleteRecurring(rec.id)} className="p-2 text-slate-300 hover:text-red-500">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- Calendar Modal --- */}
+      <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">Upcoming Bills</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 flex justify-center">
+            <Calendar
+              mode="single"
+              selected={new Date()}
+              modifiers={{
+                bill: recurringExpenses.map(r => new Date(r.nextDueDate))
+              }}
+              modifiersStyles={{
+                bill: { fontWeight: 'bold', color: '#4f46e5', textDecoration: 'underline' }
+              }}
+              className="rounded-xl border border-slate-100 shadow-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm text-slate-500">Next 30 Days</h4>
+            {recurringExpenses
+              .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime())
+              .slice(0, 3)
+              .map(rec => (
+                <div key={rec.id} className="flex items-center justify-between text-sm p-2 bg-slate-50 rounded-lg">
+                  <span>{rec.description}</span>
+                  <span className="text-slate-500">{new Date(rec.nextDueDate).toLocaleDateString()}</span>
+                </div>
+              ))}
           </div>
         </DialogContent>
       </Dialog>
