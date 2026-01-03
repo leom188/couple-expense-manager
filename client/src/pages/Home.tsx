@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,6 @@ import {
   Settings,
   User,
   X,
-  Upload,
   BarChart3,
   PieChart,
   Repeat,
@@ -46,7 +45,8 @@ import {
   List,
   Fuel,
   PawPrint,
-  Heart
+  Heart,
+  Palette
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useSecurity } from "@/contexts/SecurityContext";
 import { Lock } from "lucide-react";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { generateAvatarUrl, parseAvatarUrl, AvatarStyleKey } from "@/components/DiceBearAvatar";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -120,12 +123,9 @@ const CATEGORIES: { value: Category; label: string; icon: any; color: string; he
   { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400", hex: "#6b7280" },
 ];
 
-const AVATARS = [
-  "/images/avatar-1.png",
-  "/images/avatar-2.png",
-  "/images/avatar-3.png",
-  "/images/avatar-4.png",
-];
+// Default DiceBear avatars for new users
+const DEFAULT_AVATAR_A = generateAvatarUrl("Partner A", "adventurer");
+const DEFAULT_AVATAR_B = generateAvatarUrl("Partner B", "lorelei");
 
 // --- Helper Components ---
 
@@ -181,10 +181,14 @@ export default function Home() {
   const [profiles, setProfiles] = useState<Profiles>(() => {
     const saved = localStorage.getItem("profiles");
     return saved ? JSON.parse(saved) : {
-      A: { name: "Partner A", avatar: AVATARS[0], income: 5000 },
-      B: { name: "Partner B", avatar: AVATARS[1], income: 5000 },
+      A: { name: "Partner A", avatar: DEFAULT_AVATAR_A, income: 5000 },
+      B: { name: "Partner B", avatar: DEFAULT_AVATAR_B, income: 5000 },
     };
   });
+
+  // State for avatar picker dialogs
+  const [isAvatarPickerOpenA, setIsAvatarPickerOpenA] = useState(false);
+  const [isAvatarPickerOpenB, setIsAvatarPickerOpenB] = useState(false);
 
   const [budgets, setBudgets] = useState<Budgets>(() => {
     const saved = localStorage.getItem("budgets");
@@ -246,8 +250,7 @@ export default function Home() {
     typeof Notification !== "undefined" ? Notification.permission : "default"
   );
   
-  const fileInputRefA = useRef<HTMLInputElement>(null);
-  const fileInputRefB = useRef<HTMLInputElement>(null);
+  // File input refs removed - using DiceBear avatars now
 
   // --- Effects ---
   useEffect(() => {
@@ -544,23 +547,7 @@ export default function Home() {
     }));
   };
 
-  const handleFileUpload = (partner: Partner, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-      toast.error("Image size must be less than 2MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      updateProfile(partner, "avatar", base64String);
-      toast.success("Avatar updated successfully");
-    };
-    reader.readAsDataURL(file);
-  };
+  // handleFileUpload removed - using DiceBear avatars now
 
   const exportToCSV = () => {
     const headers = ["Date", "Description", "Category", "Amount", "Paid By", "Split Type"];
@@ -1248,10 +1235,11 @@ export default function Home() {
                               <span>{new Date(expense.date).toLocaleDateString()}</span>
                               <span>•</span>
                               <div className="flex items-center gap-1">
-                                <img 
-                                  src={profiles[expense.paidBy].avatar} 
-                                  alt={profiles[expense.paidBy].name}
-                                  className="w-4 h-4 rounded-full object-cover"
+                                <ProfileAvatar 
+                                  avatarUrl={profiles[expense.paidBy].avatar} 
+                                  name={profiles[expense.paidBy].name}
+                                  size={16}
+                                  className="rounded-full object-cover"
                                 />
                                 <span className={expense.paidBy === 'A' ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-pink-600 dark:text-pink-400 font-medium"}>
                                   Paid by {profiles[expense.paidBy].name}
@@ -1356,13 +1344,13 @@ export default function Home() {
                       <TabsList className="w-full h-14 p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
                         <TabsTrigger value="A" className="w-1/2 h-full rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 data-[state=active]:shadow-sm transition-all dark:text-slate-400">
                           <div className="flex items-center gap-2">
-                            <img src={profiles.A.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                            <ProfileAvatar avatarUrl={profiles.A.avatar} name={profiles.A.name} size={24} className="rounded-full object-cover" />
                             {profiles.A.name}
                           </div>
                         </TabsTrigger>
                         <TabsTrigger value="B" className="w-1/2 h-full rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm transition-all dark:text-slate-400">
                           <div className="flex items-center gap-2">
-                            <img src={profiles.B.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                            <ProfileAvatar avatarUrl={profiles.B.avatar} name={profiles.B.name} size={24} className="rounded-full object-cover" />
                             {profiles.B.name}
                           </div>
                         </TabsTrigger>
@@ -1570,13 +1558,13 @@ export default function Home() {
                     <TabsList className="w-full h-14 bg-slate-100 dark:bg-slate-800 rounded-full">
                       <TabsTrigger value="A" className="w-1/2 h-full rounded-full dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                         <div className="flex items-center gap-2">
-                          <img src={profiles.A.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                          <ProfileAvatar avatarUrl={profiles.A.avatar} name={profiles.A.name} size={24} className="rounded-full object-cover" />
                           {profiles.A.name}
                         </div>
                       </TabsTrigger>
                       <TabsTrigger value="B" className="w-1/2 h-full rounded-full dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                         <div className="flex items-center gap-2">
-                          <img src={profiles.B.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
+                          <ProfileAvatar avatarUrl={profiles.B.avatar} name={profiles.B.name} size={24} className="rounded-full object-cover" />
                           {profiles.B.name}
                         </div>
                       </TabsTrigger>
@@ -1866,32 +1854,41 @@ export default function Home() {
               </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-300">Avatar</Label>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {AVATARS.map((avatar) => (
-                    <button
-                      key={avatar}
-                      onClick={() => updateProfile("A", "avatar", avatar)}
-                      className={cn(
-                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0",
-                        profiles.A.avatar === avatar ? "border-indigo-600 scale-110" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-                      )}
-                    >
-                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => fileInputRefA.current?.click()}
-                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-400 flex items-center justify-center bg-slate-50 dark:bg-slate-800 shrink-0 transition-colors"
-                  >
-                    <Upload size={16} className="text-slate-400" />
-                  </button>
-                  <input 
-                    type="file" 
-                    ref={fileInputRefA} 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload("A", e)}
+                <div className="flex items-center gap-4">
+                  <ProfileAvatar 
+                    avatarUrl={profiles.A.avatar} 
+                    name={profiles.A.name} 
+                    size={64} 
+                    className="rounded-full ring-2 ring-indigo-200 dark:ring-indigo-800"
                   />
+                  <Dialog open={isAvatarPickerOpenA} onOpenChange={setIsAvatarPickerOpenA}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="dark:border-slate-700 dark:text-slate-300">
+                        <Palette size={16} className="mr-2" /> Change Avatar
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[400px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
+                      <DialogHeader>
+                        <DialogTitle className="dark:text-white">Choose Avatar for {profiles.A.name}</DialogTitle>
+                      </DialogHeader>
+                      <AvatarPicker
+                        currentSeed={(() => {
+                          const parsed = parseAvatarUrl(profiles.A.avatar);
+                          return parsed.isDiceBear && parsed.seed ? parsed.seed : profiles.A.name;
+                        })()}
+                        currentStyle={(() => {
+                          const parsed = parseAvatarUrl(profiles.A.avatar);
+                          return parsed.isDiceBear && parsed.style ? parsed.style : "adventurer";
+                        })()}
+                        onSelect={(avatarUrl) => {
+                          updateProfile("A", "avatar", avatarUrl);
+                          setIsAvatarPickerOpenA(false);
+                          toast.success("Avatar updated!");
+                        }}
+                        partnerName={profiles.A.name}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>
@@ -1914,32 +1911,41 @@ export default function Home() {
               </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-300">Avatar</Label>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {AVATARS.map((avatar) => (
-                    <button
-                      key={avatar}
-                      onClick={() => updateProfile("B", "avatar", avatar)}
-                      className={cn(
-                        "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0",
-                        profiles.B.avatar === avatar ? "border-pink-600 scale-110" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-                      )}
-                    >
-                      <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => fileInputRefB.current?.click()}
-                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-pink-400 flex items-center justify-center bg-slate-50 dark:bg-slate-800 shrink-0 transition-colors"
-                  >
-                    <Upload size={16} className="text-slate-400" />
-                  </button>
-                  <input 
-                    type="file" 
-                    ref={fileInputRefB} 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload("B", e)}
+                <div className="flex items-center gap-4">
+                  <ProfileAvatar 
+                    avatarUrl={profiles.B.avatar} 
+                    name={profiles.B.name} 
+                    size={64} 
+                    className="rounded-full ring-2 ring-pink-200 dark:ring-pink-800"
                   />
+                  <Dialog open={isAvatarPickerOpenB} onOpenChange={setIsAvatarPickerOpenB}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="dark:border-slate-700 dark:text-slate-300">
+                        <Palette size={16} className="mr-2" /> Change Avatar
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[400px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
+                      <DialogHeader>
+                        <DialogTitle className="dark:text-white">Choose Avatar for {profiles.B.name}</DialogTitle>
+                      </DialogHeader>
+                      <AvatarPicker
+                        currentSeed={(() => {
+                          const parsed = parseAvatarUrl(profiles.B.avatar);
+                          return parsed.isDiceBear && parsed.seed ? parsed.seed : profiles.B.name;
+                        })()}
+                        currentStyle={(() => {
+                          const parsed = parseAvatarUrl(profiles.B.avatar);
+                          return parsed.isDiceBear && parsed.style ? parsed.style : "lorelei";
+                        })()}
+                        onSelect={(avatarUrl) => {
+                          updateProfile("B", "avatar", avatarUrl);
+                          setIsAvatarPickerOpenB(false);
+                          toast.success("Avatar updated!");
+                        }}
+                        partnerName={profiles.B.name}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>

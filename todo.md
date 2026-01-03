@@ -6,3 +6,6 @@
 - [x] Fix PWA icon not displaying on Android Chrome
 - [x] Change default PWA name to "SharedWallet"
 - [x] Implement custom splash screen with SharedWallet logo
+- [x] Replace custom avatars with DiceBear avatar library
+- [x] Create avatar component with multiple style options
+- [x] Allow users to select avatar style and customize seed
