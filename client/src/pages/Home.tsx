@@ -205,6 +205,7 @@ export default function Home() {
   const [recCategory, setRecCategory] = useState<Category>("Rent");
   const [editingRecId, setEditingRecId] = useState<string | null>(null);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [customSplitA, setCustomSplitA] = useState<number>(50); // Percentage for Partner A
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -304,6 +305,7 @@ export default function Home() {
           amount: parseFloat(amount),
           paidBy,
           splitType,
+          customSplitA: splitType === "custom" ? customSplitA : undefined,
           category,
         } : e
       ));
@@ -317,6 +319,7 @@ export default function Home() {
         amount: parseFloat(amount),
         paidBy,
         splitType,
+        customSplitA: splitType === "custom" ? customSplitA : undefined,
         category,
         date: new Date().toISOString(),
       };
@@ -335,6 +338,9 @@ export default function Home() {
     setAmount(expense.amount.toString());
     setPaidBy(expense.paidBy);
     setSplitType(expense.splitType);
+    if (expense.splitType === "custom" && expense.customSplitA !== undefined) {
+      setCustomSplitA(expense.customSplitA);
+    }
     setCategory(expense.category);
     setIsFormOpen(true);
   };
@@ -496,8 +502,8 @@ export default function Home() {
         const ratioA = totalIncome > 0 ? profiles.A.income / totalIncome : 0.5;
         shareA = amount * ratioA;
       } else if (expense.splitType === "custom") {
-        // Fallback to 50/50 if custom split is not defined yet
-        shareA = amount * 0.5; 
+        const percentageA = expense.customSplitA !== undefined ? expense.customSplitA : 50;
+        shareA = amount * (percentageA / 100);
       }
 
       const shareB = amount - shareA;
@@ -1186,6 +1192,46 @@ export default function Home() {
                     {splitType === "income" && (
                       <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
                         Based on income: {Math.round((profiles.A.income / (profiles.A.income + profiles.B.income)) * 100)}% / {Math.round((profiles.B.income / (profiles.A.income + profiles.B.income)) * 100)}%
+                      </div>
+                    )}
+                    {splitType === "custom" && (
+                      <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-indigo-600 dark:text-indigo-400">{profiles.A.name}</span>
+                          <span className="font-medium text-pink-600 dark:text-pink-400">{profiles.B.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-1">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={customSplitA}
+                              onChange={(e) => {
+                                const val = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                                setCustomSplitA(val);
+                              }}
+                              className="h-10 text-center pr-6"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                          </div>
+                          <div className="text-slate-400 font-medium text-sm">vs</div>
+                          <div className="relative flex-1">
+                            <Input
+                              type="number"
+                              value={100 - customSplitA}
+                              disabled
+                              className="h-10 text-center pr-6 bg-slate-100 dark:bg-slate-800 text-slate-500"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                          </div>
+                        </div>
+                        <div className="relative h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className="absolute left-0 top-0 bottom-0 bg-indigo-500 transition-all duration-300"
+                            style={{ width: `${customSplitA}%` }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
