@@ -52,6 +52,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useSecurity } from "@/contexts/SecurityContext";
 import { Lock } from "lucide-react";
 
@@ -147,6 +148,10 @@ const CustomTooltip = ({ active, payload, label, currency }: any) => {
 };
 
 export default function Home() {
+  // The userAuth hooks provides authentication state
+  // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
+  let { user, loading, error, isAuthenticated, logout } = useAuth();
+
   const { theme, toggleTheme } = useTheme();
   const { hasPin, setPin, removePin } = useSecurity();
   const [pinInput, setPinInput] = useState("");
@@ -223,6 +228,14 @@ export default function Home() {
   const [currency, setCurrency] = useState(() => {
     return localStorage.getItem("currency") || "$";
   });
+
+  // Push Notifications
+  const [pushEnabled, setPushEnabled] = useState(() => {
+    return localStorage.getItem("pushEnabled") === "true";
+  });
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>(
+    typeof Notification !== "undefined" ? Notification.permission : "default"
+  );
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -247,6 +260,49 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("currency", currency);
   }, [currency]);
+
+  useEffect(() => {
+    localStorage.setItem("pushEnabled", pushEnabled.toString());
+  }, [pushEnabled]);
+
+  // Request push notification permission
+  const requestPushPermission = async () => {
+    if (typeof Notification === "undefined") {
+      toast.error("Push notifications are not supported in this browser");
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      
+      if (permission === "granted") {
+        setPushEnabled(true);
+        toast.success("Push notifications enabled!");
+        // Show a test notification
+        new Notification("SharedWallet", {
+          body: "You'll now receive bill reminders!",
+          icon: "/icon.png"
+        });
+      } else if (permission === "denied") {
+        setPushEnabled(false);
+        toast.error("Notification permission denied. Please enable in browser settings.");
+      }
+    } catch (error) {
+      toast.error("Failed to request notification permission");
+    }
+  };
+
+  // Send push notification for bill reminders
+  const sendBillReminder = (title: string, body: string) => {
+    if (pushEnabled && pushPermission === "granted" && typeof Notification !== "undefined") {
+      new Notification(title, {
+        body,
+        icon: "/icon.png",
+        tag: "bill-reminder"
+      });
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
@@ -287,10 +343,19 @@ export default function Home() {
           // Add notification
           newNotifications.push({
             id: crypto.randomUUID(),
-            message: `Auto-added recurring expense: ${rec.description} ({currency}{rec.amount})`,
+            message: `Auto-added recurring expense: ${rec.description} (${currency}${rec.amount})`,
             date: new Date().toISOString(),
             read: false
           });
+
+          // Send push notification
+          if (pushEnabled && pushPermission === "granted" && typeof Notification !== "undefined") {
+            new Notification("Bill Added", {
+              body: `${rec.description}: ${currency}${rec.amount}`,
+              icon: "/icon.png",
+              tag: `bill-${rec.id}`
+            });
+          }
 
           // Update next due date
           const nextDate = new Date(dueDate);
@@ -1632,7 +1697,44 @@ export default function Home() {
 
             <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
+            {/* Push Notifications */}
+            <div className="space-y-4">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Bell size={18} /> Push Notifications
+              </h3>
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className="space-y-1">
+                  <div className="font-medium text-slate-900 dark:text-slate-100">Bill Reminders</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {pushPermission === "granted" 
+                      ? (pushEnabled ? "Notifications enabled" : "Notifications paused")
+                      : pushPermission === "denied"
+                        ? "Blocked in browser settings"
+                        : "Get notified when bills are due"
+                    }
+                  </div>
+                </div>
+                {pushPermission === "granted" ? (
+                  <Button 
+                    variant={pushEnabled ? "outline" : "default"} 
+                    size="sm"
+                    onClick={() => setPushEnabled(!pushEnabled)}
+                  >
+                    {pushEnabled ? "Pause" : "Resume"}
+                  </Button>
+                ) : pushPermission === "denied" ? (
+                  <Button variant="outline" size="sm" disabled>
+                    Blocked
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={requestPushPermission}>
+                    Enable
+                  </Button>
+                )}
+              </div>
+            </div>
 
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Split Preferences */}
             <div className="space-y-4">

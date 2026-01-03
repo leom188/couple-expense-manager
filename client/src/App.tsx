@@ -8,8 +8,8 @@ import { SecurityProvider } from "./contexts/SecurityContext";
 import LockScreen from "./components/LockScreen";
 import Home from "./pages/Home";
 
-
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
