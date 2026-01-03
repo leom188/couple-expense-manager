@@ -56,7 +56,7 @@ import { Lock } from "lucide-react";
 
 // --- Types ---
 type Partner = "A" | "B";
-type SplitType = "50/50" | "60/40" | "custom";
+type SplitType = "50/50" | "60/40" | "income" | "custom";
 type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Other";
 type Frequency = "Monthly" | "Weekly";
 type TabView = "home" | "insights" | "planning" | "menu";
@@ -93,6 +93,7 @@ interface Notification {
 interface UserProfile {
   name: string;
   avatar: string;
+  income: number;
 }
 
 interface Profiles {
@@ -168,8 +169,8 @@ export default function Home() {
   const [profiles, setProfiles] = useState<Profiles>(() => {
     const saved = localStorage.getItem("profiles");
     return saved ? JSON.parse(saved) : {
-      A: { name: "Partner A", avatar: AVATARS[0] },
-      B: { name: "Partner B", avatar: AVATARS[1] },
+      A: { name: "Partner A", avatar: AVATARS[0], income: 5000 },
+      B: { name: "Partner B", avatar: AVATARS[1], income: 5000 },
     };
   });
 
@@ -419,7 +420,7 @@ export default function Home() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const updateProfile = (partner: Partner, field: keyof UserProfile, value: string) => {
+  const updateProfile = (partner: Partner, field: keyof UserProfile, value: string | number) => {
     setProfiles(prev => ({
       ...prev,
       [partner]: { ...prev[partner], [field]: value }
@@ -486,9 +487,18 @@ export default function Home() {
       const amount = expense.amount;
       let shareA = 0;
 
-      if (expense.splitType === "50/50") shareA = amount * 0.5;
-      else if (expense.splitType === "60/40") shareA = amount * 0.6;
-      // Add custom logic here if needed
+      if (expense.splitType === "50/50") {
+        shareA = amount * 0.5;
+      } else if (expense.splitType === "60/40") {
+        shareA = amount * 0.6;
+      } else if (expense.splitType === "income") {
+        const totalIncome = profiles.A.income + profiles.B.income;
+        const ratioA = totalIncome > 0 ? profiles.A.income / totalIncome : 0.5;
+        shareA = amount * ratioA;
+      } else if (expense.splitType === "custom") {
+        // Fallback to 50/50 if custom split is not defined yet
+        shareA = amount * 0.5; 
+      }
 
       const shareB = amount - shareA;
 
@@ -1157,22 +1167,27 @@ export default function Home() {
 
                   <div className="space-y-3 pt-2">
                     <Label className="dark:text-slate-300">Split Method</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {["50/50", "60/40", "custom"].map((type) => (
+                    <div className="grid grid-cols-4 gap-2">
+                      {["50/50", "60/40", "income", "custom"].map((type) => (
                         <button
                           key={type}
                           onClick={() => setSplitType(type as SplitType)}
                           className={cn(
-                            "h-10 rounded-lg text-sm font-medium transition-all border",
+                            "h-10 rounded-lg text-xs font-medium transition-all border px-1",
                             splitType === type 
                               ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300" 
                               : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                           )}
                         >
-                          {type === "custom" ? "Custom" : type}
+                          {type === "custom" ? "Custom" : type === "income" ? "Income" : type}
                         </button>
                       ))}
                     </div>
+                    {splitType === "income" && (
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                        Based on income: {Math.round((profiles.A.income / (profiles.A.income + profiles.B.income)) * 100)}% / {Math.round((profiles.B.income / (profiles.A.income + profiles.B.income)) * 100)}%
+                      </div>
+                    )}
                   </div>
 
                   <Button 
@@ -1338,7 +1353,7 @@ export default function Home() {
 
       {/* --- Settings Modal --- */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
+        <DialogContent className="sm:max-w-[425px] rounded-3xl dark:bg-slate-900 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading text-2xl dark:text-white">Profile Settings</DialogTitle>
           </DialogHeader>
@@ -1507,14 +1522,26 @@ export default function Home() {
               <h3 className="font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                 <User size={18} /> Partner A
               </h3>
-              <div className="grid gap-2">
-                <Label htmlFor="name-a" className="dark:text-slate-300">Name</Label>
-                <Input
-                  id="name-a"
-                  value={profiles.A.name}
-                  onChange={(e) => updateProfile("A", "name", e.target.value)}
-                  className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name-a" className="dark:text-slate-300">Name</Label>
+                  <Input
+                    id="name-a"
+                    value={profiles.A.name}
+                    onChange={(e) => updateProfile("A", "name", e.target.value)}
+                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="income-a" className="dark:text-slate-300">Monthly Income</Label>
+                  <Input
+                    id="income-a"
+                    type="number"
+                    value={profiles.A.income}
+                    onChange={(e) => updateProfile("A", "income", parseFloat(e.target.value) || 0)}
+                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-300">Avatar</Label>
@@ -1555,14 +1582,26 @@ export default function Home() {
               <h3 className="font-medium text-pink-600 dark:text-pink-400 flex items-center gap-2">
                 <User size={18} /> Partner B
               </h3>
-              <div className="grid gap-2">
-                <Label htmlFor="name-b" className="dark:text-slate-300">Name</Label>
-                <Input
-                  id="name-b"
-                  value={profiles.B.name}
-                  onChange={(e) => updateProfile("B", "name", e.target.value)}
-                  className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name-b" className="dark:text-slate-300">Name</Label>
+                  <Input
+                    id="name-b"
+                    value={profiles.B.name}
+                    onChange={(e) => updateProfile("B", "name", e.target.value)}
+                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="income-b" className="dark:text-slate-300">Monthly Income</Label>
+                  <Input
+                    id="income-b"
+                    type="number"
+                    value={profiles.B.income}
+                    onChange={(e) => updateProfile("B", "income", parseFloat(e.target.value) || 0)}
+                    className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="dark:text-slate-300">Avatar</Label>
