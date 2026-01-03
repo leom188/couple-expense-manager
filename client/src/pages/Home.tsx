@@ -929,10 +929,13 @@ export default function Home() {
                       {/* Swipeable Card */}
                       <motion.div
                         drag="x"
-                        dragConstraints={{ left: -100, right: 0 }}
-                        dragElastic={0.1}
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={{ left: 0.5, right: 0.05 }}
+                        dragSnapToOrigin
+                        whileDrag={{ scale: 0.98 }}
                         onDragEnd={(_, info) => {
-                          if (info.offset.x < -80) {
+                          // Trigger delete if dragged far enough (more than 60px) or with enough velocity
+                          if (info.offset.x < -60 || info.velocity.x < -300) {
                             if (navigator.vibrate) navigator.vibrate(50);
                             deleteExpense(expense.id);
                           }
