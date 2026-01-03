@@ -35,7 +35,11 @@ import {
   Calendar as CalendarIcon,
   Bell,
   Edit2,
-  Check
+  Check,
+  Moon,
+  Sun,
+  Download,
+  Search
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -43,6 +47,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -93,11 +98,11 @@ type Budgets = Record<Category, number>;
 
 // --- Constants ---
 const CATEGORIES: { value: Category; label: string; icon: any; color: string; hex: string }[] = [
-  { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600", hex: "#10b981" },
-  { value: "Rent", label: "Rent", icon: HomeIcon, color: "bg-blue-100 text-blue-600", hex: "#3b82f6" },
-  { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600", hex: "#eab308" },
-  { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600", hex: "#ec4899" },
-  { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600", hex: "#6b7280" },
+  { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400", hex: "#10b981" },
+  { value: "Rent", label: "Rent", icon: HomeIcon, color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400", hex: "#3b82f6" },
+  { value: "Utilities", label: "Utilities", icon: Zap, color: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400", hex: "#eab308" },
+  { value: "Fun", label: "Fun", icon: Gamepad2, color: "bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400", hex: "#ec4899" },
+  { value: "Other", label: "Other", icon: Coffee, color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400", hex: "#6b7280" },
 ];
 
 const AVATARS = [
@@ -122,9 +127,9 @@ const CategoryIcon = ({ category }: { category: Category }) => {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border border-slate-100 shadow-lg rounded-xl text-sm">
-        <p className="font-medium text-slate-900 mb-1">{label}</p>
-        <p className="text-indigo-600 font-semibold">
+      <div className="bg-white dark:bg-slate-800 p-3 border border-slate-100 dark:border-slate-700 shadow-lg rounded-xl text-sm">
+        <p className="font-medium text-slate-900 dark:text-slate-100 mb-1">{label}</p>
+        <p className="text-indigo-600 dark:text-indigo-400 font-semibold">
           ${payload[0].value.toFixed(2)}
         </p>
       </div>
@@ -134,6 +139,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Home() {
+  const { theme, toggleTheme } = useTheme();
+  
   // --- State ---
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     const saved = localStorage.getItem("expenses");
@@ -179,6 +186,7 @@ export default function Home() {
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Recurring form state
   const [recDescription, setRecDescription] = useState("");
@@ -391,6 +399,33 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const exportToCSV = () => {
+    const headers = ["Date", "Description", "Category", "Amount", "Paid By", "Split Type"];
+    const rows = expenses.map(e => [
+      new Date(e.date).toLocaleDateString(),
+      `"${e.description}"`, // Quote description to handle commas
+      e.category,
+      e.amount.toFixed(2),
+      profiles[e.paidBy].name,
+      e.splitType
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(r => r.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `expenses_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Expenses exported to CSV");
+  };
+
   const calculateSettlement = () => {
     let balance = 0; // Positive means A is owed, Negative means B is owed
 
@@ -469,50 +504,70 @@ export default function Home() {
     return progress;
   }, [expenses, budgets]);
 
+  const filteredExpenses = useMemo(() => {
+    if (!searchQuery) return expenses;
+    const lowerQuery = searchQuery.toLowerCase();
+    return expenses.filter(e => 
+      e.description.toLowerCase().includes(lowerQuery) || 
+      e.category.toLowerCase().includes(lowerQuery) ||
+      e.amount.toString().includes(lowerQuery)
+    );
+  }, [expenses, searchQuery]);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0">
+    <div className="min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0 transition-colors duration-300">
       
       {/* --- Header / Hero --- */}
-      <header className="relative overflow-hidden bg-white border-b border-slate-100 pt-12 pb-16 px-6 md:px-12">
-        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-pink-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
+      <header className="relative overflow-hidden bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 pt-12 pb-16 px-6 md:px-12 transition-colors duration-300">
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-pink-50 dark:bg-pink-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-2">
-              Shared<span className="text-indigo-600">Wallet</span>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
+              Shared<span className="text-indigo-600 dark:text-indigo-400">Wallet</span>
             </h1>
-            <p className="text-slate-500 text-lg">Simplify your couple finances.</p>
+            <p className="text-slate-500 dark:text-slate-400 text-lg">Simplify your couple finances.</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* Theme Toggle */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
+              onClick={toggleTheme}
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5 text-slate-600 dark:text-slate-300" /> : <Moon className="h-5 w-5 text-slate-600" />}
+            </Button>
+
             {/* Notifications */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50 relative"
+                  className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700 relative"
                   onClick={markNotificationsRead}
                 >
-                  <Bell className="h-5 w-5 text-slate-600" />
+                  <Bell className="h-5 w-5 text-slate-600 dark:text-slate-300" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white" />
+                    <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 rounded-2xl shadow-xl border-slate-100" align="end">
-                <div className="p-4 border-b border-slate-100 font-medium">Notifications</div>
+              <PopoverContent className="w-80 p-0 rounded-2xl shadow-xl border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-900" align="end">
+                <div className="p-4 border-b border-slate-100 dark:border-slate-800 font-medium text-slate-900 dark:text-slate-100">Notifications</div>
                 <ScrollArea className="h-[300px]">
                   {notifications.length === 0 ? (
                     <div className="p-8 text-center text-slate-500 text-sm">No notifications yet</div>
                   ) : (
-                    <div className="divide-y divide-slate-50">
+                    <div className="divide-y divide-slate-50 dark:divide-slate-800">
                       {notifications.map(n => (
-                        <div key={n.id} className={cn("p-4 text-sm", !n.read && "bg-indigo-50/50")}>
-                          <p className="text-slate-800">{n.message}</p>
+                        <div key={n.id} className={cn("p-4 text-sm", !n.read && "bg-indigo-50/50 dark:bg-indigo-900/20")}>
+                          <p className="text-slate-800 dark:text-slate-200">{n.message}</p>
                           <p className="text-xs text-slate-400 mt-1">{new Date(n.date).toLocaleDateString()}</p>
                         </div>
                       ))}
@@ -526,58 +581,58 @@ export default function Home() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
               onClick={() => setIsCalendarOpen(true)}
             >
-              <CalendarIcon className="h-5 w-5 text-slate-600" />
+              <CalendarIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             </Button>
 
             {/* Recurring Button */}
             <Button 
               variant="outline" 
               size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
               onClick={() => setIsRecurringOpen(true)}
             >
-              <Repeat className="h-5 w-5 text-slate-600" />
+              <Repeat className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             </Button>
 
             {/* Budget Button */}
             <Button 
               variant="outline" 
               size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
               onClick={() => setIsBudgetOpen(true)}
             >
-              <PieChart className="h-5 w-5 text-slate-600" />
+              <PieChart className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             </Button>
 
             {/* Settings Button */}
             <Button 
               variant="outline" 
               size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
               onClick={() => setIsSettingsOpen(true)}
             >
-              <Settings className="h-5 w-5 text-slate-600" />
+              <Settings className="h-5 w-5 text-slate-600 dark:text-slate-300" />
             </Button>
 
             {/* Settlement Card */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 w-full md:w-auto min-w-[300px]"
+              className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 w-full md:w-auto min-w-[300px]"
             >
-              <div className="flex items-center gap-3 mb-2 text-slate-500 text-sm font-medium uppercase tracking-wider">
+              <div className="flex items-center gap-3 mb-2 text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">
                 <ArrowRightLeft size={16} />
                 Settlement Status
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-heading font-light text-slate-900">
+                <span className="text-4xl md:text-5xl font-heading font-light text-slate-900 dark:text-white">
                   ${settlementAmount}
                 </span>
               </div>
-              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium">
+              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">
                 {settlementText}
               </div>
             </motion.div>
@@ -596,31 +651,31 @@ export default function Home() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm"
+                className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm"
               >
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
                     <BarChart3 size={20} />
                   </div>
-                  <h2 className="text-lg font-heading font-semibold text-slate-800">Spending by Category</h2>
+                  <h2 className="text-lg font-heading font-semibold text-slate-800 dark:text-slate-200">Spending by Category</h2>
                 </div>
                 <div className="h-[200px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#f1f5f9'} />
                       <XAxis 
                         dataKey="name" 
                         axisLine={false} 
                         tickLine={false} 
-                        tick={{ fill: '#64748b', fontSize: 12 }}
+                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }}
                         dy={10}
                       />
                       <YAxis 
                         axisLine={false} 
                         tickLine={false} 
-                        tick={{ fill: '#64748b', fontSize: 12 }}
+                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }}
                       />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: theme === 'dark' ? '#1e293b' : '#f8fafc' }} />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={50}>
                         {chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -637,13 +692,13 @@ export default function Home() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4"
+                className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4"
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="p-2 bg-pink-50 rounded-xl text-pink-600">
+                  <div className="p-2 bg-pink-50 dark:bg-pink-900/30 rounded-xl text-pink-600 dark:text-pink-400">
                     <PieChart size={20} />
                   </div>
-                  <h2 className="text-lg font-heading font-semibold text-slate-800">Budget Progress</h2>
+                  <h2 className="text-lg font-heading font-semibold text-slate-800 dark:text-slate-200">Budget Progress</h2>
                 </div>
                 
                 {CATEGORIES.map(cat => {
@@ -657,15 +712,15 @@ export default function Home() {
                       <div className="flex justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <cat.icon size={14} className="text-slate-400" />
-                          <span className="font-medium text-slate-700">{cat.label}</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{cat.label}</span>
                         </div>
-                        <span className={cn("font-medium", isOverBudget ? "text-red-500" : "text-slate-500")}>
+                        <span className={cn("font-medium", isOverBudget ? "text-red-500" : "text-slate-500 dark:text-slate-400")}>
                           ${data.spent.toFixed(0)} / ${data.limit}
                         </span>
                       </div>
                       <Progress 
                         value={data.percentage} 
-                        className="h-2 bg-slate-100" 
+                        className="h-2 bg-slate-100 dark:bg-slate-800" 
                         indicatorClassName={cn(
                           isOverBudget ? "bg-red-500" : cat.color.split(" ")[0].replace("bg-", "bg-")
                         )}
@@ -677,39 +732,60 @@ export default function Home() {
             )}
 
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-heading font-semibold text-slate-800">Recent Transactions</h2>
-              <span className="text-sm text-slate-400">{expenses.length} entries</span>
+              <h2 className="text-xl font-heading font-semibold text-slate-800 dark:text-slate-200">Recent Transactions</h2>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={exportToCSV}
+                  className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
+                >
+                  <Download size={16} className="mr-2" /> Export
+                </Button>
+                <span className="text-sm text-slate-400">{filteredExpenses.length} entries</span>
+              </div>
             </div>
 
-            {expenses.length === 0 ? (
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Input 
+                placeholder="Search expenses..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-12 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 focus:ring-indigo-500"
+              />
+            </div>
+
+            {filteredExpenses.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm"
+                className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-800 shadow-sm"
               >
                 <div className="w-48 h-48 mx-auto mb-6 relative">
                    <img src="/images/empty-state.png" alt="No expenses" className="w-full h-full object-contain opacity-90" />
                 </div>
-                <h3 className="text-xl font-medium text-slate-900 mb-2">No expenses yet</h3>
-                <p className="text-slate-500">Add your first shared expense to get started.</p>
+                <h3 className="text-xl font-medium text-slate-900 dark:text-slate-100 mb-2">No expenses found</h3>
+                <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or add a new expense.</p>
               </motion.div>
             ) : (
               <div className="space-y-3">
                 <AnimatePresence>
-                  {expenses.map((expense) => (
+                  {filteredExpenses.map((expense) => (
                     <motion.div
                       key={expense.id}
                       layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="group bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between"
+                      className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex items-center justify-between"
                     >
                       <div className="flex items-center gap-4">
                         <CategoryIcon category={expense.category} />
                         <div>
-                          <h4 className="font-medium text-slate-900">{expense.description}</h4>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                          <h4 className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</h4>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                             <span>{new Date(expense.date).toLocaleDateString()}</span>
                             <span>•</span>
                             <div className="flex items-center gap-1">
@@ -718,7 +794,7 @@ export default function Home() {
                                 alt={profiles[expense.paidBy].name}
                                 className="w-4 h-4 rounded-full object-cover"
                               />
-                              <span className={expense.paidBy === 'A' ? "text-indigo-600 font-medium" : "text-pink-600 font-medium"}>
+                              <span className={expense.paidBy === 'A' ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-pink-600 dark:text-pink-400 font-medium"}>
                                 Paid by {profiles[expense.paidBy].name}
                               </span>
                             </div>
@@ -727,12 +803,12 @@ export default function Home() {
                       </div>
                       
                       <div className="flex items-center gap-4">
-                        <span className="font-heading font-semibold text-lg text-slate-900">
+                        <span className="font-heading font-semibold text-lg text-slate-900 dark:text-slate-100">
                           ${expense.amount.toFixed(2)}
                         </span>
                         <button 
                           onClick={() => deleteExpense(expense.id)}
-                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -747,25 +823,25 @@ export default function Home() {
           {/* --- Right Column: Add Expense Form (Desktop Sticky) --- */}
           <div className="hidden md:block md:col-span-5">
             <div className="sticky top-8">
-              <Card className="border-0 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] rounded-3xl overflow-hidden">
+              <Card className="border-0 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] rounded-3xl overflow-hidden dark:bg-slate-900">
                 <div className="h-2 bg-gradient-to-r from-indigo-500 to-pink-500" />
                 <CardHeader>
-                  <CardTitle className="font-heading text-2xl">Add New Expense</CardTitle>
+                  <CardTitle className="font-heading text-2xl text-slate-900 dark:text-white">Add New Expense</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="space-y-2">
-                    <Label>Description</Label>
+                    <Label className="dark:text-slate-300">Description</Label>
                     <Input 
                       placeholder="e.g. Weekly Groceries" 
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                      className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 transition-all dark:text-white"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Amount</Label>
+                      <Label className="dark:text-slate-300">Amount</Label>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
                         <Input 
@@ -773,21 +849,21 @@ export default function Home() {
                           placeholder="0.00" 
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
-                          className="h-12 pl-8 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all font-heading text-lg"
+                          className="h-12 pl-8 rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 transition-all font-heading text-lg dark:text-white"
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Category</Label>
+                      <Label className="dark:text-slate-300">Category</Label>
                       <Select value={category} onValueChange={(v: Category) => setCategory(v)}>
-                        <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-slate-200">
+                        <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 dark:text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
                           {CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
+                            <SelectItem key={cat.value} value={cat.value} className="dark:text-slate-200 dark:focus:bg-slate-800">
                               <div className="flex items-center gap-2">
-                                <cat.icon size={16} className="text-slate-500" />
+                                <cat.icon size={16} className="text-slate-500 dark:text-slate-400" />
                                 {cat.label}
                               </div>
                             </SelectItem>
@@ -798,16 +874,16 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-3 pt-2">
-                    <Label>Who Paid?</Label>
+                    <Label className="dark:text-slate-300">Who Paid?</Label>
                     <Tabs value={paidBy} onValueChange={(v) => setPaidBy(v as Partner)} className="w-full">
-                      <TabsList className="w-full h-14 p-1 bg-slate-100 rounded-full">
-                        <TabsTrigger value="A" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all">
+                      <TabsList className="w-full h-14 p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
+                        <TabsTrigger value="A" className="w-1/2 h-full rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 data-[state=active]:shadow-sm transition-all dark:text-slate-400">
                           <div className="flex items-center gap-2">
                             <img src={profiles.A.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
                             {profiles.A.name}
                           </div>
                         </TabsTrigger>
-                        <TabsTrigger value="B" className="w-1/2 h-full rounded-full data-[state=active]:bg-white data-[state=active]:text-pink-600 data-[state=active]:shadow-sm transition-all">
+                        <TabsTrigger value="B" className="w-1/2 h-full rounded-full data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:text-pink-600 dark:data-[state=active]:text-pink-400 data-[state=active]:shadow-sm transition-all dark:text-slate-400">
                           <div className="flex items-center gap-2">
                             <img src={profiles.B.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
                             {profiles.B.name}
@@ -818,7 +894,7 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-3 pt-2">
-                    <Label>Split Method</Label>
+                    <Label className="dark:text-slate-300">Split Method</Label>
                     <div className="grid grid-cols-3 gap-2">
                       {["50/50", "60/40", "custom"].map((type) => (
                         <button
@@ -827,8 +903,8 @@ export default function Home() {
                           className={cn(
                             "h-10 rounded-lg text-sm font-medium transition-all border",
                             splitType === type 
-                              ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
-                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                              ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300" 
+                              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700"
                           )}
                         >
                           {type === "custom" ? "Custom" : type}
@@ -839,7 +915,7 @@ export default function Home() {
 
                   <Button 
                     onClick={addExpense}
-                    className="w-full h-14 text-lg rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20 mt-4"
+                    className="w-full h-14 text-lg rounded-2xl bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white shadow-lg shadow-slate-900/20 dark:shadow-indigo-600/20 mt-4"
                   >
                     Add Expense
                   </Button>
@@ -876,41 +952,41 @@ export default function Home() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full bg-white rounded-t-3xl sm:rounded-3xl p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="relative w-full bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto"
             >
-              <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6" />
-              <h2 className="text-2xl font-heading font-bold mb-6">New Expense</h2>
+              <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6" />
+              <h2 className="text-2xl font-heading font-bold mb-6 dark:text-white">New Expense</h2>
               
               <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label>Description</Label>
+                  <Label className="dark:text-slate-300">Description</Label>
                   <Input 
                     placeholder="What was it?" 
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="h-12 rounded-xl bg-slate-50"
+                    className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 dark:text-white dark:border-slate-700"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Amount</Label>
+                    <Label className="dark:text-slate-300">Amount</Label>
                     <Input 
                       type="number" 
                       placeholder="0.00" 
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="h-12 rounded-xl bg-slate-50"
+                      className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 dark:text-white dark:border-slate-700"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Category</Label>
+                    <Label className="dark:text-slate-300">Category</Label>
                     <Select value={category} onValueChange={(v: Category) => setCategory(v)}>
-                      <SelectTrigger className="h-12 rounded-xl bg-slate-50">
+                      <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-800 dark:text-white dark:border-slate-700">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="dark:bg-slate-900 dark:border-slate-800">
                         {CATEGORIES.map((cat) => (
-                          <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                          <SelectItem key={cat.value} value={cat.value} className="dark:text-slate-200 dark:focus:bg-slate-800">{cat.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -918,16 +994,16 @@ export default function Home() {
                 </div>
                 
                 <div className="space-y-3">
-                  <Label>Who Paid?</Label>
+                  <Label className="dark:text-slate-300">Who Paid?</Label>
                   <Tabs value={paidBy} onValueChange={(v) => setPaidBy(v as Partner)} className="w-full">
-                    <TabsList className="w-full h-14 bg-slate-100 rounded-full">
-                      <TabsTrigger value="A" className="w-1/2 h-full rounded-full">
+                    <TabsList className="w-full h-14 bg-slate-100 dark:bg-slate-800 rounded-full">
+                      <TabsTrigger value="A" className="w-1/2 h-full rounded-full dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                         <div className="flex items-center gap-2">
                           <img src={profiles.A.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
                           {profiles.A.name}
                         </div>
                       </TabsTrigger>
-                      <TabsTrigger value="B" className="w-1/2 h-full rounded-full">
+                      <TabsTrigger value="B" className="w-1/2 h-full rounded-full dark:text-slate-400 dark:data-[state=active]:bg-slate-700 dark:data-[state=active]:text-white">
                         <div className="flex items-center gap-2">
                           <img src={profiles.B.avatar} className="w-6 h-6 rounded-full object-cover" alt="" />
                           {profiles.B.name}
@@ -951,27 +1027,27 @@ export default function Home() {
 
       {/* --- Settings Modal --- */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-3xl">
+        <DialogContent className="sm:max-w-[425px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Profile Settings</DialogTitle>
+            <DialogTitle className="font-heading text-2xl dark:text-white">Profile Settings</DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-4">
             {/* Partner A Settings */}
             <div className="space-y-4">
-              <h3 className="font-medium text-indigo-600 flex items-center gap-2">
+              <h3 className="font-medium text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
                 <User size={18} /> Partner A
               </h3>
               <div className="grid gap-2">
-                <Label htmlFor="name-a">Name</Label>
+                <Label htmlFor="name-a" className="dark:text-slate-300">Name</Label>
                 <Input
                   id="name-a"
                   value={profiles.A.name}
                   onChange={(e) => updateProfile("A", "name", e.target.value)}
-                  className="rounded-xl"
+                  className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Avatar</Label>
+                <Label className="dark:text-slate-300">Avatar</Label>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {AVATARS.map((avatar) => (
                     <button
@@ -979,7 +1055,7 @@ export default function Home() {
                       onClick={() => updateProfile("A", "avatar", avatar)}
                       className={cn(
                         "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0",
-                        profiles.A.avatar === avatar ? "border-indigo-600 scale-110" : "border-transparent hover:border-slate-200"
+                        profiles.A.avatar === avatar ? "border-indigo-600 scale-110" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                       )}
                     >
                       <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
@@ -987,7 +1063,7 @@ export default function Home() {
                   ))}
                   <button
                     onClick={() => fileInputRefA.current?.click()}
-                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 hover:border-indigo-400 flex items-center justify-center bg-slate-50 shrink-0 transition-colors"
+                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-400 flex items-center justify-center bg-slate-50 dark:bg-slate-800 shrink-0 transition-colors"
                   >
                     <Upload size={16} className="text-slate-400" />
                   </button>
@@ -1002,24 +1078,24 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="h-px bg-slate-100" />
+            <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Partner B Settings */}
             <div className="space-y-4">
-              <h3 className="font-medium text-pink-600 flex items-center gap-2">
+              <h3 className="font-medium text-pink-600 dark:text-pink-400 flex items-center gap-2">
                 <User size={18} /> Partner B
               </h3>
               <div className="grid gap-2">
-                <Label htmlFor="name-b">Name</Label>
+                <Label htmlFor="name-b" className="dark:text-slate-300">Name</Label>
                 <Input
                   id="name-b"
                   value={profiles.B.name}
                   onChange={(e) => updateProfile("B", "name", e.target.value)}
-                  className="rounded-xl"
+                  className="rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Avatar</Label>
+                <Label className="dark:text-slate-300">Avatar</Label>
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {AVATARS.map((avatar) => (
                     <button
@@ -1027,7 +1103,7 @@ export default function Home() {
                       onClick={() => updateProfile("B", "avatar", avatar)}
                       className={cn(
                         "relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all shrink-0",
-                        profiles.B.avatar === avatar ? "border-pink-600 scale-110" : "border-transparent hover:border-slate-200"
+                        profiles.B.avatar === avatar ? "border-pink-600 scale-110" : "border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                       )}
                     >
                       <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
@@ -1035,7 +1111,7 @@ export default function Home() {
                   ))}
                   <button
                     onClick={() => fileInputRefB.current?.click()}
-                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 hover:border-pink-400 flex items-center justify-center bg-slate-50 shrink-0 transition-colors"
+                    className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-pink-400 flex items-center justify-center bg-slate-50 dark:bg-slate-800 shrink-0 transition-colors"
                   >
                     <Upload size={16} className="text-slate-400" />
                   </button>
@@ -1055,15 +1131,15 @@ export default function Home() {
 
       {/* --- Budget Modal --- */}
       <Dialog open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-3xl">
+        <DialogContent className="sm:max-w-[425px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Monthly Budgets</DialogTitle>
+            <DialogTitle className="font-heading text-2xl dark:text-white">Monthly Budgets</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <p className="text-sm text-slate-500 mb-2">Set monthly spending limits for each category.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Set monthly spending limits for each category.</p>
             {CATEGORIES.map((cat) => (
               <div key={cat.value} className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor={`budget-${cat.value}`} className="col-span-2 flex items-center gap-2">
+                <Label htmlFor={`budget-${cat.value}`} className="col-span-2 flex items-center gap-2 dark:text-slate-300">
                   <div className={cn("p-1.5 rounded-lg", cat.color)}>
                     <cat.icon size={14} />
                   </div>
@@ -1076,7 +1152,7 @@ export default function Home() {
                     type="number"
                     value={budgets[cat.value] || ""}
                     onChange={(e) => updateBudget(cat.value, e.target.value)}
-                    className="pl-7 h-9 rounded-lg"
+                    className="pl-7 h-9 rounded-lg dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                     placeholder="0"
                   />
                 </div>
@@ -1091,14 +1167,14 @@ export default function Home() {
         setIsRecurringOpen(open);
         if (!open) cancelEditingRecurring();
       }}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl">
+        <DialogContent className="sm:max-w-[500px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Recurring Expenses</DialogTitle>
+            <DialogTitle className="font-heading text-2xl dark:text-white">Recurring Expenses</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
             {/* Add/Edit Form */}
-            <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-              <h3 className="font-medium text-slate-900">
+            <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <h3 className="font-medium text-slate-900 dark:text-white">
                 {editingRecId ? "Edit Recurring Expense" : "Add New Recurring"}
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -1106,7 +1182,7 @@ export default function Home() {
                   placeholder="Description" 
                   value={recDescription}
                   onChange={(e) => setRecDescription(e.target.value)}
-                  className="bg-white"
+                  className="bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600"
                 />
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
@@ -1115,28 +1191,28 @@ export default function Home() {
                     placeholder="0.00" 
                     value={recAmount}
                     onChange={(e) => setRecAmount(e.target.value)}
-                    className="pl-7 bg-white"
+                    className="pl-7 bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600"
                   />
                 </div>
                 <Select value={recCategory} onValueChange={(v: Category) => setRecCategory(v)}>
-                  <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  <SelectTrigger className="bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue /></SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value} className="dark:text-slate-200 dark:focus:bg-slate-700">{c.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <Select value={recFrequency} onValueChange={(v: Frequency) => setRecFrequency(v)}>
-                  <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Monthly">Monthly</SelectItem>
-                    <SelectItem value="Weekly">Weekly</SelectItem>
+                  <SelectTrigger className="bg-white dark:bg-slate-700 dark:text-white dark:border-slate-600"><SelectValue /></SelectTrigger>
+                  <SelectContent className="dark:bg-slate-800 dark:border-slate-700">
+                    <SelectItem value="Monthly" className="dark:text-slate-200 dark:focus:bg-slate-700">Monthly</SelectItem>
+                    <SelectItem value="Weekly" className="dark:text-slate-200 dark:focus:bg-slate-700">Weekly</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2">
                 {editingRecId && (
-                  <Button onClick={cancelEditingRecurring} variant="outline" className="flex-1">Cancel</Button>
+                  <Button onClick={cancelEditingRecurring} variant="outline" className="flex-1 dark:border-slate-600 dark:text-slate-300">Cancel</Button>
                 )}
-                <Button onClick={addOrUpdateRecurringExpense} className="flex-1 bg-slate-900 text-white">
+                <Button onClick={addOrUpdateRecurringExpense} className="flex-1 bg-slate-900 dark:bg-indigo-600 text-white">
                   {editingRecId ? "Update" : "Add Recurring"}
                 </Button>
               </div>
@@ -1144,25 +1220,25 @@ export default function Home() {
 
             {/* List Existing */}
             <div className="space-y-3">
-              <h3 className="font-medium text-slate-900">Active Recurring</h3>
+              <h3 className="font-medium text-slate-900 dark:text-white">Active Recurring</h3>
               {recurringExpenses.length === 0 ? (
                 <p className="text-sm text-slate-400 italic">No recurring expenses set up.</p>
               ) : (
                 <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                   {recurringExpenses.map(rec => (
-                    <div key={rec.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl">
+                    <div key={rec.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl">
                       <div className="flex items-center gap-3">
                         <CategoryIcon category={rec.category} />
                         <div>
-                          <p className="font-medium text-slate-900">{rec.description}</p>
-                          <p className="text-xs text-slate-500">{rec.frequency} • ${rec.amount}</p>
+                          <p className="font-medium text-slate-900 dark:text-white">{rec.description}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{rec.frequency} • ${rec.amount}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button onClick={() => startEditingRecurring(rec)} className="p-2 text-slate-300 hover:text-indigo-600">
+                        <button onClick={() => startEditingRecurring(rec)} className="p-2 text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => deleteRecurring(rec.id)} className="p-2 text-slate-300 hover:text-red-500">
+                        <button onClick={() => deleteRecurring(rec.id)} className="p-2 text-slate-300 hover:text-red-500 dark:hover:text-red-400">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -1177,9 +1253,9 @@ export default function Home() {
 
       {/* --- Calendar Modal --- */}
       <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-3xl">
+        <DialogContent className="sm:max-w-[400px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
           <DialogHeader>
-            <DialogTitle className="font-heading text-2xl">Upcoming Bills</DialogTitle>
+            <DialogTitle className="font-heading text-2xl dark:text-white">Upcoming Bills</DialogTitle>
           </DialogHeader>
           <div className="py-4 flex justify-center">
             <Calendar
@@ -1191,18 +1267,18 @@ export default function Home() {
               modifiersStyles={{
                 bill: { fontWeight: 'bold', color: '#4f46e5', textDecoration: 'underline' }
               }}
-              className="rounded-xl border border-slate-100 shadow-sm"
+              className="rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200"
             />
           </div>
           <div className="space-y-2">
-            <h4 className="font-medium text-sm text-slate-500">Next 30 Days</h4>
+            <h4 className="font-medium text-sm text-slate-500 dark:text-slate-400">Next 30 Days</h4>
             {recurringExpenses
               .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime())
               .slice(0, 3)
               .map(rec => (
-                <div key={rec.id} className="flex items-center justify-between text-sm p-2 bg-slate-50 rounded-lg">
-                  <span>{rec.description}</span>
-                  <span className="text-slate-500">{new Date(rec.nextDueDate).toLocaleDateString()}</span>
+                <div key={rec.id} className="flex items-center justify-between text-sm p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                  <span className="dark:text-slate-200">{rec.description}</span>
+                  <span className="text-slate-500 dark:text-slate-400">{new Date(rec.nextDueDate).toLocaleDateString()}</span>
                 </div>
               ))}
           </div>
