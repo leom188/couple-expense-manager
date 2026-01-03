@@ -39,7 +39,10 @@ import {
   Moon,
   Sun,
   Download,
-  Search
+  Search,
+  Menu,
+  LayoutDashboard,
+  List
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -54,6 +57,7 @@ type Partner = "A" | "B";
 type SplitType = "50/50" | "60/40" | "custom";
 type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Other";
 type Frequency = "Monthly" | "Weekly";
+type TabView = "home" | "insights" | "planning" | "menu";
 
 interface Expense {
   id: string;
@@ -187,6 +191,7 @@ export default function Home() {
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<TabView>("home");
   
   // Recurring form state
   const [recDescription, setRecDescription] = useState("");
@@ -520,41 +525,30 @@ export default function Home() {
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-24 md:pb-0 transition-colors duration-300">
       
       {/* --- Header / Hero --- */}
-      <header className="relative overflow-hidden bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 pt-12 pb-16 px-6 md:px-12 transition-colors duration-300">
+      <header className="relative overflow-hidden bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 pt-8 pb-8 px-6 md:px-12 transition-colors duration-300">
         <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
         <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-pink-50 dark:bg-pink-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
         
-        <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="relative z-10 max-w-5xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">
+            <h1 className="font-heading text-2xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
               Shared<span className="text-indigo-600 dark:text-indigo-400">Wallet</span>
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg">Simplify your couple finances.</p>
           </div>
           
-          <div className="flex items-center gap-4 flex-wrap">
-            {/* Theme Toggle */}
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-              onClick={toggleTheme}
-            >
-              {theme === 'dark' ? <Sun className="h-5 w-5 text-slate-600 dark:text-slate-300" /> : <Moon className="h-5 w-5 text-slate-600" />}
-            </Button>
-
+          <div className="flex items-center gap-3">
             {/* Notifications */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   size="icon" 
-                  className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700 relative"
+                  className="rounded-full relative"
                   onClick={markNotificationsRead}
                 >
-                  <Bell className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                  <Bell className="h-6 w-6 text-slate-600 dark:text-slate-300" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
+                    <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
                   )}
                 </Button>
               </PopoverTrigger>
@@ -577,82 +571,253 @@ export default function Home() {
               </PopoverContent>
             </Popover>
 
-            {/* Calendar Button */}
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-              onClick={() => setIsCalendarOpen(true)}
-            >
-              <CalendarIcon className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-            </Button>
+            {/* Desktop Only Buttons */}
+            <div className="hidden md:flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className="rounded-full"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-            {/* Recurring Button */}
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-              onClick={() => setIsRecurringOpen(true)}
-            >
-              <Repeat className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-            </Button>
+      <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 relative z-20">
+        
+        {/* --- Mobile Tab Content --- */}
+        <div className="md:hidden">
+          {activeTab === "home" && (
+            <div className="space-y-6">
+              {/* Settlement Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-700"
+              >
+                <div className="flex items-center gap-3 mb-2 text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">
+                  <ArrowRightLeft size={16} />
+                  Settlement Status
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-heading font-light text-slate-900 dark:text-white">
+                    ${settlementAmount}
+                  </span>
+                </div>
+                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">
+                  {settlementText}
+                </div>
+              </motion.div>
 
-            {/* Budget Button */}
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-              onClick={() => setIsBudgetOpen(true)}
-            >
-              <PieChart className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-            </Button>
+              {/* Search & List */}
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <Input 
+                    placeholder="Search expenses..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-12 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"
+                  />
+                </div>
 
-            {/* Settings Button */}
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full h-12 w-12 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-            </Button>
+                {filteredExpenses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-slate-500">No expenses found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pb-20">
+                    {filteredExpenses.map((expense) => (
+                      <div
+                        key={expense.id}
+                        className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-4">
+                          <CategoryIcon category={expense.category} />
+                          <div>
+                            <h4 className="font-medium text-slate-900 dark:text-slate-100">{expense.description}</h4>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              {new Date(expense.date).toLocaleDateString()} • {profiles[expense.paidBy].name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
+                            ${expense.amount.toFixed(2)}
+                          </span>
+                          <button onClick={() => deleteExpense(expense.id)} className="text-slate-300 hover:text-red-500">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-            {/* Settlement Card */}
+          {activeTab === "insights" && (
+            <div className="space-y-6 pb-20">
+              <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Insights</h2>
+              
+              {/* Chart */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                <h3 className="font-medium mb-4 dark:text-white">Spending by Category</h3>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#f1f5f9'} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                      <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Budgets */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium dark:text-white">Budget Progress</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setIsBudgetOpen(true)} className="text-indigo-600">Edit</Button>
+                </div>
+                {CATEGORIES.map(cat => {
+                  const data = budgetProgress[cat.value];
+                  if (data.limit === 0) return null;
+                  return (
+                    <div key={cat.value} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600 dark:text-slate-300">{cat.label}</span>
+                        <span className="text-slate-500">${data.spent.toFixed(0)} / ${data.limit}</span>
+                      </div>
+                      <Progress value={data.percentage} className="h-2" indicatorClassName={cat.color.split(" ")[0].replace("bg-", "bg-")} />
+                    </div>
+                  );
+                })}
+                {Object.values(budgets).every(b => b === 0) && (
+                  <div className="text-center py-4 text-slate-500 text-sm">
+                    No budgets set. Tap Edit to start.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "planning" && (
+            <div className="space-y-6 pb-20">
+              <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Planning</h2>
+              
+              {/* Calendar Preview */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+                <Calendar
+                  mode="single"
+                  selected={new Date()}
+                  modifiers={{ bill: recurringExpenses.map(r => new Date(r.nextDueDate)) }}
+                  modifiersStyles={{ bill: { fontWeight: 'bold', color: '#4f46e5', textDecoration: 'underline' } }}
+                  className="rounded-xl w-full flex justify-center"
+                />
+              </div>
+
+              {/* Recurring List */}
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium dark:text-white">Recurring Expenses</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setIsRecurringOpen(true)} className="text-indigo-600">Manage</Button>
+                </div>
+                {recurringExpenses.length === 0 ? (
+                  <p className="text-sm text-slate-400 text-center py-4">No recurring bills set up.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recurringExpenses.slice(0, 3).map(rec => (
+                      <div key={rec.id} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", rec.paidBy === 'A' ? "bg-indigo-500" : "bg-pink-500")} />
+                          <span className="dark:text-slate-200">{rec.description}</span>
+                        </div>
+                        <span className="text-slate-500">{new Date(rec.nextDueDate).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "menu" && (
+            <div className="space-y-4 pb-20">
+              <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white mb-6">Menu</h2>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="mr-3" /> Profile Settings
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun className="mr-3" /> : <Moon className="mr-3" />} 
+                {theme === 'dark' ? "Light Mode" : "Dark Mode"}
+              </Button>
+
+              <Button 
+                variant="outline" 
+                className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                onClick={exportToCSV}
+              >
+                <Download className="mr-3" /> Export Data
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* --- Desktop Layout (Unchanged) --- */}
+        <div className="hidden md:grid grid-cols-12 gap-6">
+          {/* Left Column */}
+          <div className="col-span-7 space-y-6">
+            {/* Settlement Card Desktop */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/50 dark:border-slate-700/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl p-6 w-full md:w-auto min-w-[300px]"
+              className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700 mb-8"
             >
               <div className="flex items-center gap-3 mb-2 text-slate-500 dark:text-slate-400 text-sm font-medium uppercase tracking-wider">
                 <ArrowRightLeft size={16} />
                 Settlement Status
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-4xl md:text-5xl font-heading font-light text-slate-900 dark:text-white">
+                <span className="text-5xl font-heading font-light text-slate-900 dark:text-white">
                   ${settlementAmount}
                 </span>
               </div>
-              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">
+              <div className="mt-4 inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium">
                 {settlementText}
               </div>
             </motion.div>
-          </div>
-        </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 -mt-8 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          
-          {/* --- Left Column: Expense List & Chart --- */}
-          <div className="md:col-span-7 space-y-6">
-            
             {/* Chart Section */}
             {chartData.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm"
-              >
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-2 mb-6">
                   <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
                     <BarChart3 size={20} />
@@ -661,21 +826,10 @@ export default function Home() {
                 </div>
                 <div className="h-[200px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                    <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#334155' : '#f1f5f9'} />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }}
-                        dy={10}
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12 }}
-                      />
-                      <Tooltip content={<CustomTooltip />} cursor={{ fill: theme === 'dark' ? '#1e293b' : '#f8fafc' }} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={50}>
                         {chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -684,29 +838,22 @@ export default function Home() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Budget Progress Section */}
             {Object.values(budgets).some(b => b > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4"
-              >
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="p-2 bg-pink-50 dark:bg-pink-900/30 rounded-xl text-pink-600 dark:text-pink-400">
                     <PieChart size={20} />
                   </div>
                   <h2 className="text-lg font-heading font-semibold text-slate-800 dark:text-slate-200">Budget Progress</h2>
                 </div>
-                
                 {CATEGORIES.map(cat => {
                   const data = budgetProgress[cat.value];
                   if (data.limit === 0) return null;
-                  
                   const isOverBudget = data.spent > data.limit;
-                  
                   return (
                     <div key={cat.value} className="space-y-2">
                       <div className="flex justify-between text-sm">
@@ -721,25 +868,18 @@ export default function Home() {
                       <Progress 
                         value={data.percentage} 
                         className="h-2 bg-slate-100 dark:bg-slate-800" 
-                        indicatorClassName={cn(
-                          isOverBudget ? "bg-red-500" : cat.color.split(" ")[0].replace("bg-", "bg-")
-                        )}
+                        indicatorClassName={cn(isOverBudget ? "bg-red-500" : cat.color.split(" ")[0].replace("bg-", "bg-"))}
                       />
                     </div>
                   );
                 })}
-              </motion.div>
+              </div>
             )}
 
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-heading font-semibold text-slate-800 dark:text-slate-200">Recent Transactions</h2>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={exportToCSV}
-                  className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
-                >
+                <Button variant="ghost" size="sm" onClick={exportToCSV} className="text-slate-500 hover:text-indigo-600">
                   <Download size={16} className="mr-2" /> Export
                 </Button>
                 <span className="text-sm text-slate-400">{filteredExpenses.length} entries</span>
@@ -758,17 +898,13 @@ export default function Home() {
             </div>
 
             {filteredExpenses.length === 0 ? (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-800 shadow-sm"
-              >
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-800 shadow-sm">
                 <div className="w-48 h-48 mx-auto mb-6 relative">
                    <img src="/images/empty-state.png" alt="No expenses" className="w-full h-full object-contain opacity-90" />
                 </div>
                 <h3 className="text-xl font-medium text-slate-900 dark:text-slate-100 mb-2">No expenses found</h3>
                 <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or add a new expense.</p>
-              </motion.div>
+              </div>
             ) : (
               <div className="space-y-3">
                 <AnimatePresence>
@@ -820,9 +956,22 @@ export default function Home() {
             )}
           </div>
 
-          {/* --- Right Column: Add Expense Form (Desktop Sticky) --- */}
-          <div className="hidden md:block md:col-span-5">
-            <div className="sticky top-8">
+          {/* Right Column: Add Expense Form (Desktop Sticky) */}
+          <div className="col-span-5">
+            <div className="sticky top-8 space-y-6">
+              {/* Quick Actions */}
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsCalendarOpen(true)}>
+                  <CalendarIcon className="mr-2 h-4 w-4" /> Calendar
+                </Button>
+                <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsRecurringOpen(true)}>
+                  <Repeat className="mr-2 h-4 w-4" /> Recurring
+                </Button>
+                <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsBudgetOpen(true)}>
+                  <PieChart className="mr-2 h-4 w-4" /> Budget
+                </Button>
+              </div>
+
               <Card className="border-0 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] rounded-3xl overflow-hidden dark:bg-slate-900">
                 <div className="h-2 bg-gradient-to-r from-indigo-500 to-pink-500" />
                 <CardHeader>
@@ -926,14 +1075,49 @@ export default function Home() {
         </div>
       </main>
 
-      {/* --- Mobile Floating Action Button --- */}
-      <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <Button 
-          onClick={() => setIsFormOpen(true)}
-          className="h-16 w-16 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center"
-        >
-          <Plus size={32} />
-        </Button>
+      {/* --- Mobile Bottom Navigation --- */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 pb-safe z-40">
+        <div className="flex justify-around items-center h-16">
+          <button 
+            onClick={() => setActiveTab("home")}
+            className={cn("flex flex-col items-center gap-1 w-16", activeTab === "home" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
+          >
+            <HomeIcon size={24} strokeWidth={activeTab === "home" ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Home</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab("insights")}
+            className={cn("flex flex-col items-center gap-1 w-16", activeTab === "insights" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
+          >
+            <BarChart3 size={24} strokeWidth={activeTab === "insights" ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Insights</span>
+          </button>
+          
+          {/* Floating Add Button */}
+          <div className="relative -top-6">
+            <Button 
+              onClick={() => setIsFormOpen(true)}
+              className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center"
+            >
+              <Plus size={28} />
+            </Button>
+          </div>
+
+          <button 
+            onClick={() => setActiveTab("planning")}
+            className={cn("flex flex-col items-center gap-1 w-16", activeTab === "planning" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
+          >
+            <CalendarIcon size={24} strokeWidth={activeTab === "planning" ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Plan</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab("menu")}
+            className={cn("flex flex-col items-center gap-1 w-16", activeTab === "menu" ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400")}
+          >
+            <Menu size={24} strokeWidth={activeTab === "menu" ? 2.5 : 2} />
+            <span className="text-[10px] font-medium">Menu</span>
+          </button>
+        </div>
       </div>
 
       {/* --- Mobile Form Modal --- */}
