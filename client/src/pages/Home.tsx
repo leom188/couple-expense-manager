@@ -29,7 +29,8 @@ import {
   X,
   Upload,
   BarChart3,
-  PieChart
+  PieChart,
+  Repeat
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 type Partner = "A" | "B";
 type SplitType = "50/50" | "60/40" | "custom";
 type Category = "Groceries" | "Rent" | "Utilities" | "Fun" | "Other";
+type Frequency = "Monthly" | "Weekly";
 
 interface Expense {
   id: string;
@@ -51,6 +53,17 @@ interface Expense {
   customSplitA?: number; // Percentage for Partner A
   category: Category;
   date: string;
+}
+
+interface RecurringExpense {
+  id: string;
+  description: string;
+  amount: number;
+  paidBy: Partner;
+  splitType: SplitType;
+  category: Category;
+  frequency: Frequency;
+  nextDueDate: string;
 }
 
 interface UserProfile {
@@ -114,6 +127,11 @@ export default function Home() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>(() => {
+    const saved = localStorage.getItem("recurringExpenses");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [profiles, setProfiles] = useState<Profiles>(() => {
     const saved = localStorage.getItem("profiles");
     return saved ? JSON.parse(saved) : {
@@ -141,6 +159,13 @@ export default function Home() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+  const [isRecurringOpen, setIsRecurringOpen] = useState(false);
+  
+  // Recurring form state
+  const [recDescription, setRecDescription] = useState("");
+  const [recAmount, setRecAmount] = useState("");
+  const [recFrequency, setRecFrequency] = useState<Frequency>("Monthly");
+  const [recCategory, setRecCategory] = useState<Category>("Rent");
   
   const fileInputRefA = useRef<HTMLInputElement>(null);
   const fileInputRefB = useRef<HTMLInputElement>(null);
@@ -157,6 +182,55 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("budgets", JSON.stringify(budgets));
   }, [budgets]);
+
+  useEffect(() => {
+    localStorage.setItem("recurringExpenses", JSON.stringify(recurringExpenses));
+  }, [recurringExpenses]);
+
+  // Check for due recurring expenses on load
+  useEffect(() => {
+    const checkRecurring = () => {
+      const now = new Date();
+      let newExpenses: Expense[] = [];
+      let updatedRecurring = [...recurringExpenses];
+      let hasUpdates = false;
+
+      updatedRecurring = updatedRecurring.map(rec => {
+        const dueDate = new Date(rec.nextDueDate);
+        if (dueDate <= now) {
+          hasUpdates = true;
+          // Add expense
+          newExpenses.push({
+            id: crypto.randomUUID(),
+            description: rec.description,
+            amount: rec.amount,
+            paidBy: rec.paidBy,
+            splitType: rec.splitType,
+            category: rec.category,
+            date: new Date().toISOString(),
+          });
+
+          // Update next due date
+          const nextDate = new Date(dueDate);
+          if (rec.frequency === "Monthly") {
+            nextDate.setMonth(nextDate.getMonth() + 1);
+          } else {
+            nextDate.setDate(nextDate.getDate() + 7);
+          }
+          return { ...rec, nextDueDate: nextDate.toISOString() };
+        }
+        return rec;
+      });
+
+      if (hasUpdates) {
+        setExpenses(prev => [...newExpenses, ...prev]);
+        setRecurringExpenses(updatedRecurring);
+        toast.success(`Added ${newExpenses.length} recurring expense(s)`);
+      }
+    };
+
+    checkRecurring();
+  }, [recurringExpenses]); // Dependency on recurringExpenses ensures we check when list changes, but logic handles dates
 
   // --- Logic ---
   const addExpense = () => {
@@ -182,9 +256,37 @@ export default function Home() {
     toast.success("Expense added successfully");
   };
 
+  const addRecurringExpense = () => {
+    if (!recDescription || !recAmount) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const newRec: RecurringExpense = {
+      id: crypto.randomUUID(),
+      description: recDescription,
+      amount: parseFloat(recAmount),
+      paidBy: "A", // Default, could add selector
+      splitType: "50/50", // Default
+      category: recCategory,
+      frequency: recFrequency,
+      nextDueDate: new Date().toISOString(), // Due immediately
+    };
+
+    setRecurringExpenses([...recurringExpenses, newRec]);
+    setRecDescription("");
+    setRecAmount("");
+    toast.success("Recurring expense set up");
+  };
+
   const deleteExpense = (id: string) => {
     setExpenses(expenses.filter((e) => e.id !== id));
     toast.success("Expense deleted");
+  };
+
+  const deleteRecurring = (id: string) => {
+    setRecurringExpenses(recurringExpenses.filter(r => r.id !== id));
+    toast.success("Recurring expense removed");
   };
 
   const updateProfile = (partner: Partner, field: keyof UserProfile, value: string) => {
@@ -315,6 +417,16 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Recurring Button */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="rounded-full h-12 w-12 border-slate-200 bg-white/80 backdrop-blur-sm hover:bg-slate-50"
+              onClick={() => setIsRecurringOpen(true)}
+            >
+              <Repeat className="h-5 w-5 text-slate-600" />
+            </Button>
+
             {/* Budget Button */}
             <Button 
               variant="outline" 
@@ -855,6 +967,78 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- Recurring Expenses Modal --- */}
+      <Dialog open={isRecurringOpen} onOpenChange={setIsRecurringOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">Recurring Expenses</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Add New Recurring */}
+            <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <h3 className="font-medium text-slate-900">Add New Recurring</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Input 
+                  placeholder="Description" 
+                  value={recDescription}
+                  onChange={(e) => setRecDescription(e.target.value)}
+                  className="bg-white"
+                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                  <Input 
+                    type="number" 
+                    placeholder="0.00" 
+                    value={recAmount}
+                    onChange={(e) => setRecAmount(e.target.value)}
+                    className="pl-7 bg-white"
+                  />
+                </div>
+                <Select value={recCategory} onValueChange={(v: Category) => setRecCategory(v)}>
+                  <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={recFrequency} onValueChange={(v: Frequency) => setRecFrequency(v)}>
+                  <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Weekly">Weekly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={addRecurringExpense} className="w-full bg-slate-900 text-white">Add Recurring</Button>
+            </div>
+
+            {/* List Existing */}
+            <div className="space-y-3">
+              <h3 className="font-medium text-slate-900">Active Recurring</h3>
+              {recurringExpenses.length === 0 ? (
+                <p className="text-sm text-slate-400 italic">No recurring expenses set up.</p>
+              ) : (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                  {recurringExpenses.map(rec => (
+                    <div key={rec.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <CategoryIcon category={rec.category} />
+                        <div>
+                          <p className="font-medium text-slate-900">{rec.description}</p>
+                          <p className="text-xs text-slate-500">{rec.frequency} • ${rec.amount}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => deleteRecurring(rec.id)} className="text-slate-300 hover:text-red-500">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
