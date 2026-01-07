@@ -9,3 +9,11 @@
 - [x] Replace custom avatars with DiceBear avatar library
 - [x] Create avatar component with multiple style options
 - [x] Allow users to select avatar style and customize seed
+- [x] Design database schema for workspaces, users, and invitations
+- [x] Create workspace model with shared access control
+- [x] Implement invitation system (generate invite links/codes)
+- [x] Build workspace creation and management UI
+- [x] Add partner invitation flow in Settings
+- [x] Migrate expenses from localStorage to database
+- [x] Implement real-time data synchronization between users
+- [ ] Add workspace switching for users in multiple households

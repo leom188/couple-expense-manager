@@ -6,15 +6,20 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SecurityProvider } from "./contexts/SecurityContext";
+import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 import LockScreen from "./components/LockScreen";
 import { SplashScreen } from "./components/SplashScreen";
 import Home from "./pages/Home";
+import { WorkspaceSetup } from "./pages/WorkspaceSetup";
+import { AcceptInvite } from "./pages/AcceptInvite";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/setup"} component={WorkspaceSetup} />
+      <Route path={"/accept-invite"} component={AcceptInvite} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -52,11 +57,13 @@ function App() {
           defaultTheme="light"
           switchable
         >
-          <TooltipProvider>
-            <Toaster />
-            <LockScreen />
-            <Router />
-          </TooltipProvider>
+          <WorkspaceProvider>
+            <TooltipProvider>
+              <Toaster />
+              <LockScreen />
+              <Router />
+            </TooltipProvider>
+          </WorkspaceProvider>
         </ThemeProvider>
       </SecurityProvider>
     </ErrorBoundary>
