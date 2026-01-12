@@ -1,3 +1,6 @@
+# SharedWallet TODO
+
+## Completed Features
 - [x] Push Notifications for bill reminders
 - [x] Add Gas, Pet, and Health expense categories
 - [x] Redesign app icon with Arc Browser-inspired aesthetic
@@ -9,3 +12,10 @@
 - [x] Replace custom avatars with DiceBear avatar library
 - [x] Create avatar component with multiple style options
 - [x] Allow users to select avatar style and customize seed
+
+## Multi-User Collaboration (New)
+- [ ] Add "Invite Partner" button in Settings dialog (UI placeholder added)
+- [x] Create invitation generation backend API (already exists from previous work)
+- [ ] Implement invitation acceptance flow
+- [ ] Add database sync for expenses (works alongside localStorage)
+- [ ] Test real-time sync between two users
