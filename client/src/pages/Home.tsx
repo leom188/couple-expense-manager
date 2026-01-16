@@ -63,6 +63,7 @@ import { Lock } from "lucide-react";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { generateAvatarUrl, parseAvatarUrl, AvatarStyleKey } from "@/components/DiceBearAvatar";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -698,10 +699,11 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-pink-50 dark:bg-pink-900/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
         
         <div className="relative z-10 max-w-5xl mx-auto flex justify-between items-center">
-          <div>
+          <div className="flex items-center gap-4">
             <h1 className="font-heading text-2xl md:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
               Shared<span className="text-indigo-600 dark:text-indigo-400">Wallet</span>
             </h1>
+            <WorkspaceSwitcher />
           </div>
           
           <div className="flex items-center gap-3">

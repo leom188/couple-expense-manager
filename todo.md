@@ -19,3 +19,15 @@
 - [ ] Implement invitation acceptance flow
 - [ ] Add database sync for expenses (works alongside localStorage)
 - [ ] Test real-time sync between two users
+
+## Workspace Switching Feature (New)
+- [x] Update workspace schema to support multiple workspaces per user
+- [x] Create tRPC API endpoints for fetching user's workspaces
+- [x] Add workspace switching mutation to backend
+- [x] Build WorkspaceSwitcher component (dropdown for desktop)
+- [x] Build WorkspaceSwitcher component (bottom sheet for mobile)
+- [x] Update WorkspaceContext to handle workspace switching
+- [x] Add workspace indicator in header
+- [x] Test workspace switching with multiple workspaces
+- [x] Ensure expenses load correctly when switching workspaces
+- [x] Add "Create New Workspace" option in switcher
