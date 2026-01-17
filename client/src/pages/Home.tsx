@@ -707,13 +707,13 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Notifications */}
+            {/* Notifications - Hidden on mobile, accessible via menu */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="rounded-full relative"
+                  className="hidden md:flex rounded-full relative"
                   onClick={markNotificationsRead}
                 >
                   <Bell className="h-6 w-6 text-slate-600 dark:text-slate-300" />
@@ -741,17 +741,17 @@ export default function Home() {
               </PopoverContent>
             </Popover>
 
-            {/* Theme Toggle (Visible on all devices) */}
+            {/* Theme Toggle - Hidden on mobile, accessible via menu */}
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full"
+              className="hidden md:flex rounded-full"
               onClick={toggleTheme}
             >
               {theme === 'dark' ? <Sun className="h-6 w-6 text-slate-600 dark:text-slate-300" /> : <Moon className="h-6 w-6 text-slate-600 dark:text-slate-300" />}
             </Button>
 
-            {/* Settings Button (Visible on all devices) */}
+            {/* Settings Button - Always visible for quick access */}
             <Button 
               variant="ghost" 
               size="icon" 

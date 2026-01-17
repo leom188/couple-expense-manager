@@ -31,3 +31,14 @@
 - [x] Test workspace switching with multiple workspaces
 - [x] Ensure expenses load correctly when switching workspaces
 - [x] Add "Create New Workspace" option in switcher
+
+## Mobile UX Improvements
+- [x] Remove redundant header icons on mobile (notifications, theme)
+- [x] Improve workspace switcher spacing on mobile
+- [x] Keep settings icon visible for quick access
+
+## Documentation
+- [x] Create README.md with project overview
+- [x] Document all features and their locations
+- [x] Document swipe gestures and undo functionality
+- [x] Document workspace switching feature
