@@ -67,3 +67,12 @@
 - [x] Add workspace delete functionality
 - [x] Add settings button to UI
 - [x] Test workspace settings operations
+
+## Phase 1: Code Refactoring - Extract Business Logic
+- [x] Analyze Home.tsx structure and identify logic to extract
+- [x] Create useExpenseForm hook (form state, validation, add/edit logic)
+- [x] Create useExpenseList hook (filtering, search, display logic)
+- [x] Create useSettlement hook (settlement calculation)
+- [x] Create useRecurringExpenses hook (recurring expense management)
+- [ ] Update Home.tsx to use new hooks (deferred to Phase 2)
+- [x] Test hooks independently
