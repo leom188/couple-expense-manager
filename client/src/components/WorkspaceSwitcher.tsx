@@ -5,10 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Check, ChevronDown, Plus, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { WorkspaceCreateDialog } from "./WorkspaceCreateDialog";
 
 export function WorkspaceSwitcher() {
   const { workspaces, currentWorkspaceId, setCurrentWorkspaceId } = useWorkspace();
   const [isOpen, setIsOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
 
@@ -116,7 +118,7 @@ export function WorkspaceSwitcher() {
               className="w-full h-14 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
               onClick={() => {
                 setIsOpen(false);
-                // TODO: Open workspace creation flow
+                setCreateOpen(true);
               }}
             >
               <Plus size={18} className="mr-2" />
@@ -125,6 +127,11 @@ export function WorkspaceSwitcher() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <WorkspaceCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
     </>
   );
 }

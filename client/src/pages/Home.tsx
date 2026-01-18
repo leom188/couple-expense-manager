@@ -64,6 +64,7 @@ import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { generateAvatarUrl, parseAvatarUrl, AvatarStyleKey } from "@/components/DiceBearAvatar";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { WorkspaceSettingsDialog } from "@/components/WorkspaceSettingsDialog";
 
 // --- Types ---
 type Partner = "A" | "B";
@@ -230,6 +231,7 @@ export default function Home() {
   const [isBudgetOpen, setIsBudgetOpen] = useState(false);
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isWorkspaceSettingsOpen, setIsWorkspaceSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabView>("home");
   
@@ -974,9 +976,17 @@ export default function Home() {
               <Button 
                 variant="outline" 
                 className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                onClick={() => setIsWorkspaceSettingsOpen(true)}
+              >
+                <Settings className="mr-3" /> Workspace Settings
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="w-full justify-start h-14 text-lg rounded-2xl dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 onClick={() => setIsSettingsOpen(true)}
               >
-                <Settings className="mr-3" /> Profile Settings
+                <User className="mr-3" /> Profile Settings
               </Button>
               
               <Button 
@@ -2123,6 +2133,12 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Workspace Settings Dialog */}
+      <WorkspaceSettingsDialog
+        open={isWorkspaceSettingsOpen}
+        onOpenChange={setIsWorkspaceSettingsOpen}
+      />
     </div>
   );
 }

@@ -42,3 +42,28 @@
 - [x] Document all features and their locations
 - [x] Document swipe gestures and undo functionality
 - [x] Document workspace switching feature
+
+## Database Integration
+- [x] Create expenses table schema in database
+- [x] Create recurring expenses table schema
+- [x] Add expense API endpoints (create, list, update, delete)
+- [x] Add recurring expense API endpoints
+- [ ] Migrate expense tracking from localStorage to database
+- [ ] Update expense list to fetch from database
+- [ ] Update settlement calculation to use database data
+- [ ] Test expense CRUD operations with database
+
+## Workspace Creation Flow
+- [x] Create workspace creation dialog/form
+- [x] Add workspace creation API integration
+- [x] Connect "Create New Workspace" button to creation flow
+- [x] Add validation for workspace name and currency
+- [x] Test workspace creation end-to-end
+
+## Workspace Settings Panel
+- [x] Create workspace settings dialog component
+- [x] Add workspace rename functionality
+- [x] Add workspace currency change functionality
+- [x] Add workspace delete functionality
+- [x] Add settings button to UI
+- [x] Test workspace settings operations

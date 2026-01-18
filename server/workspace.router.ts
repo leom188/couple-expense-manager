@@ -405,4 +405,34 @@ export const workspaceRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * Delete workspace (owner only)
+   */
+  delete: protectedProcedure
+    .input(z.object({ workspaceId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      // Check if user is owner
+      const workspace = await db
+        .select()
+        .from(workspaces)
+        .where(eq(workspaces.id, input.workspaceId))
+        .limit(1);
+
+      if (workspace.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Workspace not found" });
+      }
+
+      if (workspace[0].ownerId !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the workspace owner can delete the workspace" });
+      }
+
+      // Delete workspace (cascading deletes will handle related records)
+      await db.delete(workspaces).where(eq(workspaces.id, input.workspaceId));
+
+      return { success: true };
+    }),
 });
