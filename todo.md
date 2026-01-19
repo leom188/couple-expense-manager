@@ -76,3 +76,14 @@
 - [x] Create useRecurringExpenses hook (recurring expense management)
 - [ ] Update Home.tsx to use new hooks (deferred to Phase 2)
 - [x] Test hooks independently
+
+## Phase 2: Code Refactoring - Extract UI Components
+- [x] Create ExpenseForm component
+- [x] Create ExpenseList component with swipe gestures
+- [x] Create SettlementCard component
+- [x] Create TabNavigation component
+- [ ] Create pages/Insights.tsx for analytics
+- [ ] Create pages/Planning.tsx for budgets
+- [ ] Create pages/Menu.tsx for settings
+- [ ] Refactor Home.tsx to use extracted components
+- [ ] Test all functionality after refactoring
