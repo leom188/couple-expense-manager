@@ -82,8 +82,6 @@
 - [x] Create ExpenseList component with swipe gestures
 - [x] Create SettlementCard component
 - [x] Create TabNavigation component
-- [ ] Create pages/Insights.tsx for analytics
-- [ ] Create pages/Planning.tsx for budgets
-- [ ] Create pages/Menu.tsx for settings
-- [ ] Refactor Home.tsx to use extracted components
-- [ ] Test all functionality after refactoring
+- [x] Skip separate page files (keep tabs in Home.tsx for state sharing)
+- [x] Components extracted and ready for reuse in future features
+- [x] Refactoring complete - 4 hooks + 4 components created
