@@ -19,6 +19,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Loader2, Trash2, Settings as SettingsIcon } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { InvitationManager } from "./InvitationManager";
 
 interface WorkspaceSettingsDialogProps {
   open: boolean;
@@ -118,8 +119,9 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
           </DialogHeader>
 
           <Tabs defaultValue="general" className="mt-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="general">General</TabsTrigger>
+              <TabsTrigger value="invitations">Invitations</TabsTrigger>
               <TabsTrigger value="danger">Danger Zone</TabsTrigger>
             </TabsList>
 
@@ -163,6 +165,10 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
                   Save Changes
                 </Button>
               </div>
+            </TabsContent>
+
+            <TabsContent value="invitations" className="space-y-4 mt-4">
+              <InvitationManager workspaceId={currentWorkspace.id} />
             </TabsContent>
 
             <TabsContent value="danger" className="space-y-4 mt-4">

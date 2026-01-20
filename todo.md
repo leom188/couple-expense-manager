@@ -85,3 +85,22 @@
 - [x] Skip separate page files (keep tabs in Home.tsx for state sharing)
 - [x] Components extracted and ready for reuse in future features
 - [x] Refactoring complete - 4 hooks + 4 components created
+
+## Database Migration (localStorage → Database)
+- [x] Review expense API endpoints and database schema
+- [ ] Replace expenses localStorage with tRPC queries
+- [ ] Replace recurring expenses localStorage with tRPC queries
+- [ ] Migrate profiles to database (workspace members table)
+- [ ] Migrate budgets to database
+- [ ] Migrate notifications to database
+- [ ] Test all CRUD operations with database
+- [ ] Remove localStorage dependencies
+
+## Partner Invitation System (New Standalone Feature)
+- [x] Review invitation API endpoints in workspace router
+- [x] Create InvitationManager component (list, accept, reject)
+- [x] Create SendInvitationDialog component (email or code)
+- [x] Create InvitationCard component (integrated into InvitationManager)
+- [x] Add "Invitations" tab to WorkspaceSettingsDialog
+- [x] Test invitation flow (send, accept, reject)
+- [x] Write vitest tests for invitation functionality (5/5 passing)
