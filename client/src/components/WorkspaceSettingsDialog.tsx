@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -97,24 +97,30 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
   };
 
   // Update local state when workspace changes
-  if (currentWorkspace && (name !== currentWorkspace.name || currency !== currentWorkspace.currency)) {
-    setName(currentWorkspace.name);
-    setCurrency(currentWorkspace.currency);
-  }
-
-  if (!currentWorkspace) return null;
+  useEffect(() => {
+    if (currentWorkspace) {
+      setName(currentWorkspace.name);
+      setCurrency(currentWorkspace.currency);
+    }
+  }, [currentWorkspace?.id]);
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
+          {!currentWorkspace ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+          <>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <SettingsIcon className="h-5 w-5" />
               Workspace Settings
             </DialogTitle>
             <DialogDescription>
-              Manage settings for {currentWorkspace.name}
+              Manage settings for {currentWorkspace?.name}
             </DialogDescription>
           </DialogHeader>
 
@@ -190,6 +196,8 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
               </div>
             </TabsContent>
           </Tabs>
+          </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -199,7 +207,7 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the workspace "{currentWorkspace.name}" and remove all associated data including expenses, budgets, and recurring expenses.
+              This action cannot be undone. This will permanently delete the workspace "{currentWorkspace?.name}" and remove all associated data including expenses, budgets, and recurring expenses.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

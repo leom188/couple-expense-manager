@@ -104,3 +104,7 @@
 - [x] Add "Invitations" tab to WorkspaceSettingsDialog
 - [x] Test invitation flow (send, accept, reject)
 - [x] Write vitest tests for invitation functionality (5/5 passing)
+
+## Bug Fixes
+- [x] Fix workspace settings dialog not opening
+- [x] Test workspace settings access from menu
