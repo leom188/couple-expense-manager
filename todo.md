@@ -108,3 +108,8 @@
 ## Bug Fixes
 - [x] Fix workspace settings dialog not opening
 - [x] Test workspace settings access from menu
+
+## Workspace Settings Issues
+- [x] Test workspace settings dialog functionality
+- [x] Identify what's not working in workspace settings (ID mismatch)
+- [x] Fix workspace settings issues (validate stored workspace ID)

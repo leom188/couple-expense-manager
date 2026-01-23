@@ -30,10 +30,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [currentWorkspaceId]);
 
-  // Auto-select first workspace if none selected
+  // Auto-select first workspace if none selected or if current ID is invalid
   useEffect(() => {
-    if (!isLoading && workspaces.length > 0 && currentWorkspaceId === null) {
-      setCurrentWorkspaceId(workspaces[0].id);
+    if (!isLoading && workspaces.length > 0) {
+      // Check if current workspace ID is valid
+      const isValidWorkspace = currentWorkspaceId !== null && workspaces.some(w => w.id === currentWorkspaceId);
+      
+      if (!isValidWorkspace) {
+        // Select first workspace if current ID is null or invalid
+        setCurrentWorkspaceId(workspaces[0].id);
+      }
     }
   }, [workspaces, isLoading, currentWorkspaceId]);
 
