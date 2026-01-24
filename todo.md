@@ -113,3 +113,16 @@
 - [x] Test workspace settings dialog functionality
 - [x] Identify what's not working in workspace settings (ID mismatch)
 - [x] Fix workspace settings issues (validate stored workspace ID)
+
+## Additional Component Extraction from Home.tsx
+- [x] Analyze Home.tsx structure for extractable components
+- [x] Identify repeated UI patterns and complex sections
+- [ ] Extract InsightsCharts component (deferred - tabs are concise)
+- [ ] Extract PlanningPanel component (deferred - tabs are concise)
+- [ ] Extract MenuPanel component (deferred - tabs are concise)
+- [x] Extract BudgetManager component
+- [x] Extract RecurringExpenseManager component
+- [ ] Extract CalendarView component
+- [ ] Extract ProfileSettings component
+- [x] Update Home.tsx to use new components
+- [x] Test all functionality after extraction (app loads successfully)
