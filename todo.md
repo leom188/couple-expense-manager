@@ -122,7 +122,9 @@
 - [ ] Extract MenuPanel component (deferred - tabs are concise)
 - [x] Extract BudgetManager component
 - [x] Extract RecurringExpenseManager component
-- [ ] Extract CalendarView component
-- [ ] Extract ProfileSettings component
+- [x] Extract CalendarView component
+- [ ] Extract ProfileSettings component (deferred - too complex with 400+ lines)
+- [x] Update Home.tsx to use CalendarView
+- [x] Test calendar functionality (app loads successfully)
 - [x] Update Home.tsx to use new components
 - [x] Test all functionality after extraction (app loads successfully)

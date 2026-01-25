@@ -65,6 +65,7 @@ import { AvatarPicker } from "@/components/AvatarPicker";
 import { generateAvatarUrl, parseAvatarUrl, AvatarStyleKey } from "@/components/DiceBearAvatar";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { WorkspaceSettingsDialog } from "@/components/WorkspaceSettingsDialog";
+import { CalendarView } from "@/components/CalendarView";
 import { BudgetManager } from "@/components/BudgetManager";
 import { RecurringExpenseManager } from "@/components/RecurringExpenseManager";
 
@@ -2014,38 +2015,11 @@ export default function Home() {
       />
 
       {/* --- Calendar Modal --- */}
-      <Dialog open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
-          <DialogHeader>
-            <DialogTitle className="font-heading text-2xl dark:text-white">Upcoming Bills</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 flex justify-center">
-            <Calendar
-              mode="single"
-              selected={new Date()}
-              modifiers={{
-                bill: recurringExpenses.map(r => new Date(r.nextDueDate))
-              }}
-              modifiersStyles={{
-                bill: { fontWeight: 'bold', color: '#4f46e5', textDecoration: 'underline' }
-              }}
-              className="rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200"
-            />
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm text-slate-500 dark:text-slate-400">Next 30 Days</h4>
-            {recurringExpenses
-              .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime())
-              .slice(0, 3)
-              .map(rec => (
-                <div key={rec.id} className="flex items-center justify-between text-sm p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                  <span className="dark:text-slate-200">{rec.description}</span>
-                  <span className="text-slate-500 dark:text-slate-400">{new Date(rec.nextDueDate).toLocaleDateString()}</span>
-                </div>
-              ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CalendarView
+        open={isCalendarOpen}
+        onOpenChange={setIsCalendarOpen}
+        recurringExpenses={recurringExpenses}
+      />
 
       {/* Workspace Settings Dialog */}
       <WorkspaceSettingsDialog
