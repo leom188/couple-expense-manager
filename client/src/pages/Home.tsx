@@ -1619,44 +1619,7 @@ export default function Home() {
             <DialogTitle className="font-heading text-2xl dark:text-white">Profile Settings</DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-4">
-            {/* App Settings */}
-            <div className="space-y-4">
-              <h3 className="font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                <Settings size={18} /> App Settings
-              </h3>
-              
 
-
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm">
-                    <span className="text-xl font-bold text-emerald-500">{currency}</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-slate-100">Currency</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Current symbol: {currency}
-                    </p>
-                  </div>
-                </div>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger className="w-[80px] h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="$">$</SelectItem>
-                    <SelectItem value="€">€</SelectItem>
-                    <SelectItem value="£">£</SelectItem>
-                    <SelectItem value="¥">¥</SelectItem>
-                    <SelectItem value="₹">₹</SelectItem>
-                    <SelectItem value="kr">kr</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-            </div>
-
-            <div className="h-px bg-slate-100 dark:bg-slate-800" />
 
             {/* Security Settings */}
             <div className="space-y-4">

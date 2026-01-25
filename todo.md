@@ -128,3 +128,7 @@
 - [x] Test calendar functionality (app loads successfully)
 - [x] Update Home.tsx to use new components
 - [x] Test all functionality after extraction (app loads successfully)
+
+## UI Cleanup
+- [x] Remove duplicate currency selector from profile settings dialog
+- [x] Test profile settings after currency selector removal (app loads successfully)
