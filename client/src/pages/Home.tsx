@@ -756,15 +756,7 @@ export default function Home() {
               {theme === 'dark' ? <Sun className="h-6 w-6 text-slate-600 dark:text-slate-300" /> : <Moon className="h-6 w-6 text-slate-600 dark:text-slate-300" />}
             </Button>
 
-            {/* Settings Button - Always visible for quick access */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="h-6 w-6 text-slate-600 dark:text-slate-300" />
-            </Button>
+
           </div>
         </div>
       </header>

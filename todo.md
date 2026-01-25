@@ -132,3 +132,7 @@
 ## UI Cleanup
 - [x] Remove duplicate currency selector from profile settings dialog
 - [x] Test profile settings after currency selector removal (app loads successfully)
+
+## Header Cleanup
+- [x] Remove duplicate settings icon from header
+- [x] Test header layout after settings icon removal (cleaner header with only notifications and theme toggle)
