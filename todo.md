@@ -136,3 +136,8 @@
 ## Header Cleanup
 - [x] Remove duplicate settings icon from header
 - [x] Test header layout after settings icon removal (cleaner header with only notifications and theme toggle)
+
+## Feature Removal
+- [x] Remove search bar functionality from expense list
+- [x] Remove searchQuery state and related logic
+- [x] Test expense list after search bar removal (app loads successfully, cleaner UI)

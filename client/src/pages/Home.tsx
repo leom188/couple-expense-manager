@@ -235,7 +235,6 @@ export default function Home() {
   const [isRecurringOpen, setIsRecurringOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isWorkspaceSettingsOpen, setIsWorkspaceSettingsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabView>("home");
   
   // Recurring form state
@@ -683,15 +682,7 @@ export default function Home() {
     return progress;
   }, [expenses, budgets]);
 
-  const filteredExpenses = useMemo(() => {
-    if (!searchQuery) return expenses;
-    const lowerQuery = searchQuery.toLowerCase();
-    return expenses.filter(e => 
-      e.description.toLowerCase().includes(lowerQuery) || 
-      e.category.toLowerCase().includes(lowerQuery) ||
-      e.amount.toString().includes(lowerQuery)
-    );
-  }, [expenses, searchQuery]);
+  const filteredExpenses = expenses;
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -787,17 +778,8 @@ export default function Home() {
                 </div>
               </motion.div>
 
-              {/* Search & List */}
+              {/* Expense List */}
               <div className="space-y-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <Input 
-                    placeholder="Search expenses..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-12 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800"
-                  />
-                </div>
 
                 {filteredExpenses.length === 0 ? (
                   <div className="text-center py-12">
@@ -1192,17 +1174,6 @@ export default function Home() {
                 </Popover>
                 <span className="text-sm text-slate-400">{filteredExpenses.length} entries</span>
               </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <Input 
-                placeholder="Search expenses..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 focus:ring-indigo-500"
-              />
             </div>
 
             {filteredExpenses.length === 0 ? (
