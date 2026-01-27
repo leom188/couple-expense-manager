@@ -141,3 +141,9 @@
 - [x] Remove search bar functionality from expense list
 - [x] Remove searchQuery state and related logic
 - [x] Test expense list after search bar removal (app loads successfully, cleaner UI)
+
+## Exp## Expense Form Visibility
+- [x] Show Add New Expense button only on home tab
+- [x] Hide Add button on Insights, Planning, and Menu tabs
+- [x] Hide Quick Actions (Calendar, Recurring, Budget) on non-home tabs
+- [ ] Test tab navigation with conditional button visibility (verified via dev server)
