@@ -113,8 +113,8 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-          <>
-          <DialogHeader>
+            <>
+              <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <SettingsIcon className="h-5 w-5" />
               Workspace Settings
@@ -196,7 +196,7 @@ export function WorkspaceSettingsDialog({ open, onOpenChange }: WorkspaceSetting
               </div>
             </TabsContent>
           </Tabs>
-          </>
+            </>
           )}
         </DialogContent>
       </Dialog>

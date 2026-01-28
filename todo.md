@@ -146,4 +146,9 @@
 - [x] Show Add New Expense button only on home tab
 - [x] Hide Add button on Insights, Planning, and Menu tabs
 - [x] Hide Quick Actions (Calendar, Recurring, Budget) on non-home tabs
-- [ ] Test tab navigation with conditional button visibility (verified via dev server)
+- [x] Test tab navigation with conditional button visibility (verified working - form shows on home tab) (verified via dev server)
+
+## Expense Form Visibility
+- [x] Show Add New Expense form only on home tab
+- [x] Hide expense form on Insights, Planning, and Menu tabs
+- [x] Test tab navigation to verify conditional rendering

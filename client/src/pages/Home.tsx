@@ -1455,15 +1455,19 @@ export default function Home() {
             <span className="text-[10px] font-medium">Insights</span>
           </button>
           
-          {/* Floating Add Button */}
-          <div className="relative -top-6">
-            <Button 
-              onClick={() => setIsFormOpen(true)}
-              className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center"
-            >
-              <Plus size={28} />
-            </Button>
-          </div>
+          {/* Floating Add Button - Only visible on home tab */}
+          {activeTab === "home" ? (
+            <div className="relative -top-6">
+              <Button 
+                onClick={() => setIsFormOpen(true)}
+                className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center"
+              >
+                <Plus size={28} />
+              </Button>
+            </div>
+          ) : (
+            <div className="w-16"></div>
+          )}
 
           <button 
             onClick={() => {
