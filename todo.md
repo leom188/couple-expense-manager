@@ -152,3 +152,8 @@
 - [x] Show Add New Expense form only on home tab
 - [x] Hide expense form on Insights, Planning, and Menu tabs
 - [x] Test tab navigation to verify conditional rendering
+
+## Layout Improvements
+- [x] Remove blank space on Insights, Planning, and Menu tabs
+- [x] Make main content area full-width when expense form is hidden
+- [x] Test responsive layout on all tabs (mobile and desktop)

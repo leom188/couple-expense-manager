@@ -1036,7 +1036,7 @@ export default function Home() {
         {/* --- Desktop Layout (Unchanged) --- */}
         <div className="hidden md:grid grid-cols-12 gap-6">
           {/* Left Column */}
-          <div className="col-span-7 space-y-6">
+          <div className={cn("space-y-6", activeTab === "home" ? "col-span-7" : "col-span-12")}>
             {/* Settlement Card Desktop */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -1264,6 +1264,7 @@ export default function Home() {
           </div>
 
           {/* Right Column: Add Expense Form (Desktop Sticky) */}
+          {activeTab === "home" && (
           <div className="col-span-5">
             <div className="sticky top-8 space-y-6">
               {/* Quick Actions - Only show on home tab */}
@@ -1428,6 +1429,7 @@ export default function Home() {
               )}
             </div>
           </div>
+          )}
         </div>
       </main>
 
