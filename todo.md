@@ -157,3 +157,8 @@
 - [x] Remove blank space on Insights, Planning, and Menu tabs
 - [x] Make main content area full-width when expense form is hidden
 - [x] Test responsive layout on all tabs (mobile and desktop)
+
+## Navigation Bar Spacing
+- [x] Fix excessive spacing between Insights and Plan buttons on non-home tabs
+- [x] Reduce padding/margins in quick actions bar when expense form is hidden
+- [x] Test button spacing consistency across all tabs

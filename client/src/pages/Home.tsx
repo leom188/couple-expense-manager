@@ -1035,6 +1035,21 @@ export default function Home() {
 
         {/* --- Desktop Layout (Unchanged) --- */}
         <div className="hidden md:grid grid-cols-12 gap-6">
+          {/* Quick Actions - Always visible */}
+          <div className="col-span-12">
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsCalendarOpen(true)}>
+                <CalendarIcon className="mr-2 h-4 w-4" /> Calendar
+              </Button>
+              <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsRecurringOpen(true)}>
+                <Repeat className="mr-2 h-4 w-4" /> Recurring
+              </Button>
+              <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsBudgetOpen(true)}>
+                <PieChart className="mr-2 h-4 w-4" /> Budget
+              </Button>
+            </div>
+          </div>
+
           {/* Left Column */}
           <div className={cn("space-y-6", activeTab === "home" ? "col-span-7" : "col-span-12")}>
             {/* Settlement Card Desktop */}
@@ -1267,21 +1282,6 @@ export default function Home() {
           {activeTab === "home" && (
           <div className="col-span-5">
             <div className="sticky top-8 space-y-6">
-              {/* Quick Actions - Only show on home tab */}
-              {activeTab === "home" && (
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsCalendarOpen(true)}>
-                  <CalendarIcon className="mr-2 h-4 w-4" /> Calendar
-                </Button>
-                <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsRecurringOpen(true)}>
-                  <Repeat className="mr-2 h-4 w-4" /> Recurring
-                </Button>
-                <Button variant="outline" className="flex-1 h-12 rounded-xl dark:bg-slate-800 dark:text-white" onClick={() => setIsBudgetOpen(true)}>
-                  <PieChart className="mr-2 h-4 w-4" /> Budget
-                </Button>
-              </div>
-              )}
-
               {activeTab === "home" && (
               <Card className="border-0 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.08)] rounded-3xl overflow-hidden dark:bg-slate-900">
                 <div className="h-2 bg-gradient-to-r from-indigo-500 to-pink-500" />
