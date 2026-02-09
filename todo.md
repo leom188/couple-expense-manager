@@ -143,12 +143,6 @@
 - [x] Test expense list after search bar removal (app loads successfully, cleaner UI)
 
 ## Exp## Expense Form Visibility
-- [x] Show Add New Expense button only on home tab
-- [x] Hide Add button on Insights, Planning, and Menu tabs
-- [x] Hide Quick Actions (Calendar, Recurring, Budget) on non-home tabs
-- [x] Test tab navigation with conditional button visibility (verified working - form shows on home tab) (verified via dev server)
-
-## Expense Form Visibility
 - [x] Show Add New Expense form only on home tab
 - [x] Hide expense form on Insights, Planning, and Menu tabs
 - [x] Test tab navigation to verify conditional rendering
@@ -162,3 +156,16 @@
 - [x] Fix excessive spacing between Insights and Plan buttons on non-home tabs
 - [x] Reduce padding/margins in quick actions bar when expense form is hidden
 - [x] Test button spacing consistency across all tabs
+
+## Expense Templates Feature
+- [x] Create expense templates state (Weekly Groceries, Monthly Rent, Utilities, Gas)
+- [x] Add template quick-add buttons to expense form
+- [x] Implement template selection to auto-fill form fields
+- [x] Test template quick-add functionality (verified - templates auto-fill description and category)
+
+## Monthly Spending Summary Card
+- [x] Create MonthlySummary component for Insights tab
+- [x] Calculate total spending for current month
+- [x] Show partner spending comparison with progress bars
+- [x] Display transaction count
+- [x] Test summary card calculations and display (verified - shows $0.00 total, 0 transactions, partner breakdown)

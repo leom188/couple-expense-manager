@@ -118,6 +118,16 @@ interface Profiles {
 
 type Budgets = Record<Category, number>;
 
+interface ExpenseTemplate {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  category: Category;
+  paidBy: Partner;
+  splitType: SplitType;
+}
+
 // --- Constants ---
 const CATEGORIES: { value: Category; label: string; icon: any; color: string; hex: string }[] = [
   { value: "Groceries", label: "Groceries", icon: ShoppingBag, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400", hex: "#10b981" },
@@ -133,6 +143,15 @@ const CATEGORIES: { value: Category; label: string; icon: any; color: string; he
 // Default DiceBear avatars for new users
 const DEFAULT_AVATAR_A = generateAvatarUrl("Partner A", "adventurer");
 const DEFAULT_AVATAR_B = generateAvatarUrl("Partner B", "lorelei");
+
+// Default expense templates
+const DEFAULT_TEMPLATES: ExpenseTemplate[] = [
+  { id: "1", name: "Weekly Groceries", description: "Weekly grocery shopping", amount: 0, category: "Groceries", paidBy: "A", splitType: "50/50" },
+  { id: "2", name: "Monthly Rent", description: "Rent payment", amount: 0, category: "Rent", paidBy: "A", splitType: "50/50" },
+  { id: "3", name: "Utilities", description: "Electric/Water/Internet", amount: 0, category: "Utilities", paidBy: "A", splitType: "50/50" },
+  { id: "4", name: "Gas", description: "Gas station fill-up", amount: 0, category: "Gas", paidBy: "A", splitType: "50/50" },
+  { id: "5", name: "Fun Activity", description: "Entertainment/Dining out", amount: 0, category: "Fun", paidBy: "A", splitType: "50/50" },
+];
 
 // --- Helper Components ---
 
@@ -260,6 +279,22 @@ export default function Home() {
     return localStorage.getItem("currency") || "$";
   });
 
+  // Expense templates state
+  const [templates, setTemplates] = useState<ExpenseTemplate[]>(() => {
+    const saved = localStorage.getItem("expenseTemplates");
+    return saved ? JSON.parse(saved) : DEFAULT_TEMPLATES;
+  });
+
+  // Apply template to form
+  const applyTemplate = (template: ExpenseTemplate) => {
+    setDescription(template.description);
+    setAmount(template.amount.toString());
+    setPaidBy(template.paidBy);
+    setSplitType(template.splitType);
+    setCategory(template.category);
+    setIsFormOpen(true);
+  };
+
   // Push Notifications
   const [pushEnabled, setPushEnabled] = useState(() => {
     return localStorage.getItem("pushEnabled") === "true";
@@ -292,8 +327,8 @@ export default function Home() {
   }, [currency]);
 
   useEffect(() => {
-    localStorage.setItem("pushEnabled", pushEnabled.toString());
-  }, [pushEnabled]);
+    localStorage.setItem("expenseTemplates", JSON.stringify(templates));
+  }, [templates]);
 
   // Request push notification permission
   const requestPushPermission = async () => {
@@ -859,6 +894,69 @@ export default function Home() {
             <div className="space-y-6 pb-20">
               <h2 className="text-2xl font-heading font-bold text-slate-900 dark:text-white">Insights</h2>
               
+              {/* Monthly Summary Card */}
+              <div className="bg-gradient-to-br from-indigo-50 to-pink-50 dark:from-indigo-900/20 dark:to-pink-900/20 rounded-3xl p-6 border border-indigo-200 dark:border-indigo-800 shadow-sm">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-heading font-semibold text-slate-900 dark:text-white">This Month's Summary</h3>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4">
+                      <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Spending</div>
+                      <div className="text-2xl font-heading font-bold text-indigo-600 dark:text-indigo-400">{currency}{expenses.filter(e => {
+                        const expenseDate = new Date(e.date);
+                        const today = new Date();
+                        return expenseDate.getMonth() === today.getMonth() && expenseDate.getFullYear() === today.getFullYear();
+                      }).reduce((sum, e) => sum + e.amount, 0).toFixed(2)}</div>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4">
+                      <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Transactions</div>
+                      <div className="text-2xl font-heading font-bold text-pink-600 dark:text-pink-400">{expenses.filter(e => {
+                        const expenseDate = new Date(e.date);
+                        const today = new Date();
+                        return expenseDate.getMonth() === today.getMonth() && expenseDate.getFullYear() === today.getFullYear();
+                      }).length}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Partner Breakdown */}
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 space-y-3">
+                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">Spending by Partner</div>
+                    {(() => {
+                      const monthExpenses = expenses.filter(e => {
+                        const expenseDate = new Date(e.date);
+                        const today = new Date();
+                        return expenseDate.getMonth() === today.getMonth() && expenseDate.getFullYear() === today.getFullYear();
+                      });
+                      const spendingA = monthExpenses.filter(e => e.paidBy === 'A').reduce((sum, e) => sum + e.amount, 0);
+                      const spendingB = monthExpenses.filter(e => e.paidBy === 'B').reduce((sum, e) => sum + e.amount, 0);
+                      const total = spendingA + spendingB;
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">{profiles.A.name}</span>
+                            <span className="font-medium text-slate-900 dark:text-white">{currency}{spendingA.toFixed(2)}</span>
+                          </div>
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                            <div className="bg-indigo-500 h-full" style={{width: total > 0 ? `${(spendingA/total)*100}%` : '0%'}} />
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-600 dark:text-slate-400">{profiles.B.name}</span>
+                            <span className="font-medium text-slate-900 dark:text-white">{currency}{spendingB.toFixed(2)}</span>
+                          </div>
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                            <div className="bg-pink-500 h-full" style={{width: total > 0 ? `${(spendingB/total)*100}%` : '0%'}} />
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+              
               {/* Chart */}
               <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
                 <h3 className="font-medium mb-4 dark:text-white">Spending by Category</h3>
@@ -1289,6 +1387,23 @@ export default function Home() {
                   <CardTitle className="font-heading text-2xl text-slate-900 dark:text-white">Add New Expense</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
+                  {/* Quick Templates */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Quick Templates</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {templates.slice(0, 4).map((template) => (
+                        <button
+                          key={template.id}
+                          onClick={() => applyTemplate(template)}
+                          className="p-2 text-left text-sm rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
+                        >
+                          <div className="font-medium text-slate-700 dark:text-slate-200">{template.name}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{template.category}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label className="dark:text-slate-300">Description</Label>
                     <Input 
